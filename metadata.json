@@ -1,0 +1,6 @@
+{
+  "name": "FitPath AI",
+  "description": "Smart India Hackathon (SIH) prototype for zero-hardware student health: phone sensor cadence, exam cortisol auto-scaling, lock screen glance widgets, dynamic photo slide animations, and dorm nutrition.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

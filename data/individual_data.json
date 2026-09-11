@@ -1,0 +1,219 @@
+{
+  "exists": true,
+  "profile": {
+    "name": "Arjun Sharma",
+    "age": 21,
+    "gender": "Male",
+    "heightCm": 175,
+    "weightKg": 68,
+    "occupationOrSchedule": "Engineering Student",
+    "examDate": "2026-09-20",
+    "daysUntilExam": 9,
+    "budgetPerDay": 4,
+    "dormFacilities": "microwave-kettle",
+    "fitnessGoal": "stress-relief",
+    "fitnessLevel": "beginner",
+    "preferredLocation": "home-bodyweight",
+    "medical": {
+      "jointBackIssues": "Lower back tightness from long study sessions",
+      "chronicConditions": "none",
+      "dietaryRestrictions": "Vegetarian",
+      "physicalLimitations": "No heavy weights available",
+      "medicalPrecautions": [
+        "Lower Back Protection: Heavy spinal axial compression and weighted bending avoided.",
+        "Plant-Based Optimization: High-bioavailability legumes, oats, and nut proteins prioritized."
+      ]
+    },
+    "updatedAt": "2026-09-11T01:46:55.643Z"
+  },
+  "baselineRoutine": {
+    "id": "routine-base-1789091215643",
+    "title": "Stress-Relief Bodyweight Foundation",
+    "durationMinutes": 35,
+    "intensityLevel": "Moderate",
+    "intensityPercent": 75,
+    "examFriendlyNotes": "Designed to be performed in 35 minutes to clear mental fog without inducing excessive fatigue before exams.",
+    "medicalClearanceNotes": "Focuses on neutral spine alignment and low-impact movements to alleviate lower back tightness from sedentary study postures.",
+    "exercises": [
+      {
+        "name": "Bird-Dog",
+        "sets": 3,
+        "repsOrDuration": "10 reps per side",
+        "dormEquipmentNeeded": "Bodyweight",
+        "targetBenefit": "Core stability and spinal alignment",
+        "postureFocus": "Keep back flat like a table, do not arch",
+        "medicalSafetyNote": "Strengthens stabilizers without loading the spine"
+      },
+      {
+        "name": "Glute Bridges",
+        "sets": 3,
+        "repsOrDuration": "15 reps",
+        "dormEquipmentNeeded": "Bodyweight",
+        "targetBenefit": "Posterior chain activation",
+        "postureFocus": "Squeeze glutes at the top, avoid hyperextending lower back",
+        "medicalSafetyNote": "Safe for lower back as it avoids vertical compression"
+      },
+      {
+        "name": "Wall Push-Ups",
+        "sets": 3,
+        "repsOrDuration": "12 reps",
+        "dormEquipmentNeeded": "Wall",
+        "targetBenefit": "Upper body strength",
+        "postureFocus": "Keep elbows tucked at 45 degrees",
+        "medicalSafetyNote": "Reduces strain on shoulders and lower back compared to floor push-ups"
+      },
+      {
+        "name": "Bodyweight Squats (to chair)",
+        "sets": 3,
+        "repsOrDuration": "12 reps",
+        "dormEquipmentNeeded": "Chair",
+        "targetBenefit": "Leg strength and circulation",
+        "postureFocus": "Chest up, weight in heels",
+        "medicalSafetyNote": "Chair provides a depth limit to protect knees"
+      }
+    ]
+  },
+  "scaledRoutine": {
+    "id": "routine-scaled-1789091215643",
+    "title": "Restorative Deload Routine",
+    "durationMinutes": 18,
+    "intensityLevel": "Low (Restorative)",
+    "intensityPercent": 40,
+    "examFriendlyNotes": "Shortened 18m routine to prevent CNS burnout during exams/stress",
+    "medicalClearanceNotes": "Focuses on mobility, stress relief, and gentle posture recovery",
+    "exercises": [
+      {
+        "name": "Cat-Cow Stretch",
+        "sets": 2,
+        "repsOrDuration": "10 breaths",
+        "dormEquipmentNeeded": "Bodyweight",
+        "targetBenefit": "Spinal mobility and tension release",
+        "postureFocus": "Move with the breath, slow controlled motion",
+        "medicalSafetyNote": "Gentle on joints and relieves lumbar stiffness"
+      },
+      {
+        "name": "Seated Forward Fold",
+        "sets": 2,
+        "repsOrDuration": "60 seconds",
+        "dormEquipmentNeeded": "Chair",
+        "targetBenefit": "Hamstring and lower back release",
+        "postureFocus": "Hinge at hips, keep spine long",
+        "medicalSafetyNote": "Avoids rounding the lower back excessively"
+      }
+    ]
+  },
+  "activeRoutine": {
+    "id": "routine-base-1789091215643",
+    "title": "Stress-Relief Bodyweight Foundation",
+    "durationMinutes": 35,
+    "intensityLevel": "Moderate",
+    "intensityPercent": 75,
+    "examFriendlyNotes": "Designed to be performed in 35 minutes to clear mental fog without inducing excessive fatigue before exams.",
+    "medicalClearanceNotes": "Focuses on neutral spine alignment and low-impact movements to alleviate lower back tightness from sedentary study postures.",
+    "exercises": [
+      {
+        "name": "Bird-Dog",
+        "sets": 3,
+        "repsOrDuration": "10 reps per side",
+        "dormEquipmentNeeded": "Bodyweight",
+        "targetBenefit": "Core stability and spinal alignment",
+        "postureFocus": "Keep back flat like a table, do not arch",
+        "medicalSafetyNote": "Strengthens stabilizers without loading the spine"
+      },
+      {
+        "name": "Glute Bridges",
+        "sets": 3,
+        "repsOrDuration": "15 reps",
+        "dormEquipmentNeeded": "Bodyweight",
+        "targetBenefit": "Posterior chain activation",
+        "postureFocus": "Squeeze glutes at the top, avoid hyperextending lower back",
+        "medicalSafetyNote": "Safe for lower back as it avoids vertical compression"
+      },
+      {
+        "name": "Wall Push-Ups",
+        "sets": 3,
+        "repsOrDuration": "12 reps",
+        "dormEquipmentNeeded": "Wall",
+        "targetBenefit": "Upper body strength",
+        "postureFocus": "Keep elbows tucked at 45 degrees",
+        "medicalSafetyNote": "Reduces strain on shoulders and lower back compared to floor push-ups"
+      },
+      {
+        "name": "Bodyweight Squats (to chair)",
+        "sets": 3,
+        "repsOrDuration": "12 reps",
+        "dormEquipmentNeeded": "Chair",
+        "targetBenefit": "Leg strength and circulation",
+        "postureFocus": "Chest up, weight in heels",
+        "medicalSafetyNote": "Chair provides a depth limit to protect knees"
+      }
+    ]
+  },
+  "isAutoScaled": false,
+  "meals": [
+    {
+      "id": "meal-1789091215643-0",
+      "name": "Overnight Protein Oats",
+      "mealType": "Breakfast",
+      "cost": 1.25,
+      "prepTimeMinutes": 4,
+      "calories": 420,
+      "proteinGrams": 24,
+      "appliances": "kettle",
+      "ingredients": [
+        "Rolled oats",
+        "Peanut butter",
+        "Soy milk",
+        "Chia seeds"
+      ],
+      "studentHack": "Prepare in a jar the night before using hot water from the kettle to soften oats.",
+      "medicalDietNote": "Vegetarian, high fiber for sustained energy."
+    },
+    {
+      "id": "meal-1789091215643-1",
+      "name": "Microwave Lentil & Rice Bowl",
+      "mealType": "Lunch/Dinner",
+      "cost": 1.5,
+      "prepTimeMinutes": 8,
+      "calories": 550,
+      "proteinGrams": 22,
+      "appliances": "microwave",
+      "ingredients": [
+        "Pre-cooked rice pouch",
+        "Canned lentils",
+        "Frozen spinach",
+        "Soy sauce"
+      ],
+      "studentHack": "Use a microwave-safe bowl; steam spinach on top of rice for 2 minutes.",
+      "medicalDietNote": "Vegetarian, provides complex carbs for brain function."
+    },
+    {
+      "id": "meal-1789091215643-2",
+      "name": "Greek Yogurt & Nut Snack",
+      "mealType": "Snack",
+      "cost": 1.25,
+      "prepTimeMinutes": 1,
+      "calories": 300,
+      "proteinGrams": 18,
+      "appliances": "none",
+      "ingredients": [
+        "Plain Greek yogurt",
+        "Handful of peanuts"
+      ],
+      "studentHack": "Buy large tubs of yogurt to keep costs under $4/day.",
+      "medicalDietNote": "Vegetarian, high protein for muscle recovery."
+    }
+  ],
+  "telemetry": {
+    "stepsToday": 4200,
+    "targetSteps": 8000,
+    "sleepHours": 6.2,
+    "screenOffEstimatedSleep": 6,
+    "activeMinutes": 20,
+    "walkingCadenceRpm": 100,
+    "campusStairsClimbed": 4,
+    "lastSyncedAt": "Initialized from phone sensors",
+    "source": "Phone Built-in Accelerometer"
+  },
+  "workoutHistory": []
+}
