@@ -391,52 +391,146 @@ Return JSON with this exact structure:
       const isKneeIssue = jointBack.includes("knee");
       const isVeg = dietRestrictions.includes("vegetarian") || dietRestrictions.includes("vegan");
 
+      const isGym = preferredLocation === "gym" || preferredLocation === "student-rec-gym";
+
       generatedBaselineRoutine = {
         id: `routine-base-${Date.now()}`,
-        title: `${fitnessGoal === "stress-relief" ? "Postural Reset & Conditioning" : "Personalized Full-Body Strength"} (${fitnessLevel})`,
-        durationMinutes: fitnessLevel === "beginner" ? 30 : 40,
+        title: isGym
+          ? `Standard Gym Muscle & Strength Split (${fitnessLevel.toUpperCase()})`
+          : `${fitnessGoal === "stress-relief" ? "Postural Reset & Conditioning" : "Personalized Full-Body Strength"} (${fitnessLevel})`,
+        durationMinutes: fitnessLevel === "beginner" ? 35 : 45,
         intensityLevel: "Moderate",
-        intensityPercent: 70,
-        examFriendlyNotes: `Customized for ${occupation}. Workouts keep volume manageable around ${daysUntilExam} days to deadline.`,
+        intensityPercent: 75,
+        examFriendlyNotes: isGym
+          ? `Full commercial gym equipment split for ${occupation}. Features barbells, dumbbells, and cable stations.`
+          : `Customized for ${occupation}. Workouts keep volume manageable around ${daysUntilExam} days to deadline.`,
         medicalClearanceNotes: `Exercises filtered for safety: ${precautions.join(" ")}`,
-        exercises: [
-          {
-            name: isBackIssue ? "Glute Bridges & Pelvic Tilts" : isKneeIssue ? "Straight Leg Isometric Wall Sits" : "Bodyweight / Backpack Squats",
-            sets: 3,
-            repsOrDuration: isBackIssue ? "15 slow reps" : "12-15 reps",
-            dormEquipmentNeeded: "Floor or mat",
-            targetBenefit: "Posterior chain & core stabilization",
-            postureFocus: isBackIssue ? "Decompresses lower spine without axial load" : "Stable knee angle",
-            medicalSafetyNote: isBackIssue ? "Zero spinal compression" : "Joint-friendly tracking",
-          },
-          {
-            name: "Incline Bed / Desk Push-ups",
-            sets: 3,
-            repsOrDuration: "10-12 reps",
-            dormEquipmentNeeded: "Edge of sturdy desk or bed",
-            targetBenefit: "Pectorals, anterior delts, triceps",
-            postureFocus: "Core engaged, shoulders pulled away from ears",
-            medicalSafetyNote: "Low wrist angle compared to flat floor",
-          },
-          {
-            name: "Doorframe Towel Rows / Wall Angels",
-            sets: 3,
-            repsOrDuration: "12 reps",
-            dormEquipmentNeeded: "Doorway or flat wall",
-            targetBenefit: "Rhomboids, middle traps, posture correction",
-            postureFocus: "Counters computer desk slouch and neck strain",
-            medicalSafetyNote: "Strengthens upper back to protect cervical spine",
-          },
-          {
-            name: "Bird-Dog Core Stability Holds",
-            sets: 3,
-            repsOrDuration: "30 seconds each side",
-            dormEquipmentNeeded: "Floor mat or rug",
-            targetBenefit: "Deep multifidus, glutes, anti-rotation core",
-            postureFocus: "Neutral flat spine, no sagging",
-            medicalSafetyNote: "Gold standard clinical exercise for lower back resilience",
-          },
-        ],
+        exercises: isGym
+          ? [
+              {
+                name: "Flat Olympic Barbell Bench Press",
+                sets: 4,
+                repsOrDuration: "8-12 reps",
+                dormEquipmentNeeded: "Olympic Bench & Barbell with Safety Collars",
+                targetBenefit: "Pectoralis major (sternal & clavicular), triceps, anterior deltoids",
+                postureFocus: "5-point contact (feet flat, glutes, upper back, head), slight arch, elbows at 45-70°",
+                medicalSafetyNote: "Retract scapulae to preserve rotator cuffs and acromion spacing",
+                level: "moderate",
+                bodyPart: "chest",
+              },
+              {
+                name: "Wide-Grip Lat Pulldown Machine",
+                sets: 4,
+                repsOrDuration: "10-12 reps",
+                dormEquipmentNeeded: "Cable Lat Pulldown Station with Thigh Pads",
+                targetBenefit: "Latissimus dorsi, teres major, rhomboids & biceps",
+                postureFocus: "Thighs locked tight, pull with elbows leading down towards hips, slight 15° lean",
+                medicalSafetyNote: "Never pull behind the neck to prevent cervical spine and shoulder nerve impingement",
+                level: "easy",
+                bodyPart: "back",
+              },
+              {
+                name: "45-Degree Leg Press Machine",
+                sets: 4,
+                repsOrDuration: "10-15 reps",
+                dormEquipmentNeeded: "Plate-Loaded 45° Incline Leg Press Machine",
+                targetBenefit: "Quadriceps, gluteus maximus, hamstrings",
+                postureFocus: "Lower back pressed flat against pad, knees track toes, don't lock knees at apex",
+                medicalSafetyNote: "Keep hips glued to the seat back to avoid dangerous lumbar rounding (butt wink)",
+                level: "moderate",
+                bodyPart: "legs",
+              },
+              {
+                name: "Standing Olympic / EZ-Bar Bicep Curls",
+                sets: 3,
+                repsOrDuration: "10-12 reps",
+                dormEquipmentNeeded: "EZ-Curl Bar or Barbells",
+                targetBenefit: "Biceps brachii (short and long head) & brachialis",
+                postureFocus: "Elbows pinned to ribcage, neutral wrist alignment, zero torso swinging",
+                medicalSafetyNote: "EZ-bar reduces wrist supination strain for carpal tunnel and wrist joint safety",
+                level: "moderate",
+                bodyPart: "biceps",
+              },
+              {
+                name: "Triceps Cable Rope Pushdowns",
+                sets: 3,
+                repsOrDuration: "12-15 reps",
+                dormEquipmentNeeded: "High Cable Pulley & Rope Attachment",
+                targetBenefit: "Triceps brachii (lateral, long & medial heads)",
+                postureFocus: "Elbows anchored at flanks, flare rope out at the bottom squeeze",
+                medicalSafetyNote: "Keep shoulders depressed away from ears to protect trapezius",
+                level: "easy",
+                bodyPart: "triceps",
+              },
+              {
+                name: "Seated Dumbbell Overhead Shoulder Press",
+                sets: 3,
+                repsOrDuration: "10-12 reps",
+                dormEquipmentNeeded: "Adjustable Incline/Flat Bench & Dumbbells",
+                targetBenefit: "Anterior & lateral deltoids, clavicular pectorals, triceps",
+                postureFocus: "Bench set to 75-80° incline, press up in slight arc without banging weights",
+                medicalSafetyNote: "Avoid flared 90° elbows; keep hands in scapular plane (30° forward)",
+                level: "intense",
+                bodyPart: "shoulders",
+              },
+              {
+                name: "Captain's Chair / Hanging Knee & Leg Raises",
+                sets: 3,
+                repsOrDuration: "12-15 controlled reps",
+                dormEquipmentNeeded: "Captain's Chair Power Tower or Pull-up Bar",
+                targetBenefit: "Rectus abdominis & deep core transverse stability",
+                postureFocus: "Forearms pressed into pads, curl knees towards sternum without swinging",
+                medicalSafetyNote: "Curl pelvis upwards rather than flexing only hip flexors to protect lower back",
+                level: "moderate",
+                bodyPart: "core",
+              },
+            ]
+          : [
+              {
+                name: isBackIssue ? "Glute Bridges & Pelvic Tilts" : isKneeIssue ? "Straight Leg Isometric Wall Sits" : "Bodyweight / Backpack Squats",
+                sets: 3,
+                repsOrDuration: isBackIssue ? "15 slow reps" : "12-15 reps",
+                dormEquipmentNeeded: "Floor or mat",
+                targetBenefit: "Posterior chain & core stabilization",
+                postureFocus: isBackIssue ? "Decompresses lower spine without axial load" : "Stable knee angle",
+                medicalSafetyNote: isBackIssue ? "Zero spinal compression" : "Joint-friendly tracking",
+                level: "easy",
+                bodyPart: "legs",
+              },
+              {
+                name: "Incline Bed / Desk Push-ups",
+                sets: 3,
+                repsOrDuration: "10-12 reps",
+                dormEquipmentNeeded: "Edge of sturdy desk or bed",
+                targetBenefit: "Pectorals, anterior delts, triceps",
+                postureFocus: "Core engaged, shoulders pulled away from ears",
+                medicalSafetyNote: "Low wrist angle compared to flat floor",
+                level: "easy",
+                bodyPart: "chest",
+              },
+              {
+                name: "Doorframe Towel Rows / Wall Angels",
+                sets: 3,
+                repsOrDuration: "12 reps",
+                dormEquipmentNeeded: "Doorway or flat wall",
+                targetBenefit: "Rhomboids, middle traps, posture correction",
+                postureFocus: "Counters computer desk slouch and neck strain",
+                medicalSafetyNote: "Strengthens upper back to protect cervical spine",
+                level: "easy",
+                bodyPart: "back",
+              },
+              {
+                name: "Bird-Dog Core Stability Holds",
+                sets: 3,
+                repsOrDuration: "30 seconds each side",
+                dormEquipmentNeeded: "Floor mat or rug",
+                targetBenefit: "Deep multifidus, glutes, anti-rotation core",
+                postureFocus: "Neutral flat spine, no sagging",
+                medicalSafetyNote: "Gold standard clinical exercise for lower back resilience",
+                level: "easy",
+                bodyPart: "core",
+              },
+            ],
       };
 
       generatedScaledRoutine = {
@@ -478,49 +572,97 @@ Return JSON with this exact structure:
         ],
       };
 
-      generatedMeals = [
-        {
-          id: `meal-${Date.now()}-0`,
-          name: "High-Protein Microwave Oats with Peanut Butter",
-          mealType: "Breakfast",
-          cost: Math.min(1.20, budgetPerDay * 0.25),
-          prepTimeMinutes: 3,
-          calories: 410,
-          proteinGrams: 22,
-          appliances: "Kettle or Microwave",
-          ingredients: ["Rolled oats", "2 tbsp Peanut butter", "Hot water or plant milk", "Cinnamon"],
-          studentHack: "Stir in peanut butter while hot for creamy protein boost without protein powder.",
-          medicalDietNote: isVeg ? "100% vegetarian & budget friendly" : "Easy digestion",
-        },
-        {
-          id: `meal-${Date.now()}-1`,
-          name: isVeg ? "Microwave Black Bean & Rice Fiesta Bowl" : "Tuna & Brown Rice High-Protein Salad",
-          mealType: "Lunch",
-          cost: Math.min(1.80, budgetPerDay * 0.4),
-          prepTimeMinutes: 4,
-          calories: 480,
-          proteinGrams: 28,
-          appliances: "Microwave or No Cooking",
-          ingredients: isVeg
-            ? ["Canned black beans", "Pre-cooked microwave brown rice", "Salsa", "Cheddar or nutritional yeast"]
-            : ["Can of chunk light tuna", "Microwave brown rice", "Soy sauce & lime", "Sweet corn"],
-          studentHack: "Rinse canned beans or fish; mix with warm rice for instant hearty lunch with zero pots to wash.",
-          medicalDietNote: "Rich in complex carbs for sustained cognitive focus without sugar crash",
-        },
-        {
-          id: `meal-${Date.now()}-2`,
-          name: "Mug-Scrambled Eggs & Whole Wheat Toast",
-          mealType: "Dinner",
-          cost: Math.min(1.50, budgetPerDay * 0.35),
-          prepTimeMinutes: 4,
-          calories: 430,
-          proteinGrams: 24,
-          appliances: "Microwave",
-          ingredients: ["2 Fresh eggs", "Salt & pepper", "2 Slices whole wheat bread", "Butter or olive oil"],
-          studentHack: "Whisk eggs in a coffee mug with a fork, microwave 60-70 seconds for fluffy eggs with no skillet.",
-          medicalDietNote: "High choline for memory consolidation during revision",
-        },
-      ];
+      const isNoAppliance = dormFacilities === 'none';
+
+      generatedMeals = isNoAppliance
+        ? [
+            {
+              id: `meal-${Date.now()}-0`,
+              name: "Peanut Butter, Banana & Crushed Nut Whole Wheat Wrap",
+              mealType: "Breakfast",
+              cost: Math.min(1.10, budgetPerDay * 0.25),
+              prepTimeMinutes: 2,
+              calories: 420,
+              proteinGrams: 18,
+              appliances: "None (Zero Cooking / Ready-to-eat)",
+              ingredients: ["Whole wheat tortilla", "2 tbsp Peanut butter", "1 Banana", "Handful crushed almonds or peanuts"],
+              studentHack: "Zero heat needed. Spread peanut butter on wrap, roll up with sliced banana for instant high-energy cognitive breakfast.",
+              medicalDietNote: "Rich in complex carbs, potassium and healthy fats for sustained morning focus.",
+            },
+            {
+              id: `meal-${Date.now()}-1`,
+              name: isVeg
+                ? "Ready-to-Eat Mediterranean Chickpea & Cucumber Salad"
+                : "Canned Chunk Light Tuna & Sweet Corn Protein Salad",
+              mealType: "Lunch",
+              cost: Math.min(1.40, budgetPerDay * 0.4),
+              prepTimeMinutes: 3,
+              calories: 460,
+              proteinGrams: isVeg ? 22 : 32,
+              appliances: "None (Zero Cooking / Ready-to-eat)",
+              ingredients: isVeg
+                ? ["1 Can rinsed chickpeas", "Diced cucumber", "Lemon juice", "Olive oil or chaat masala", "Tomato"]
+                : ["1 Can chunk light tuna in water", "Canned sweet corn", "Lemon juice & black pepper", "Whole wheat crackers"],
+              studentHack: "Canned legumes and tuna require zero appliances or refrigeration. Drain, season, and eat straight from bowl.",
+              medicalDietNote: "High bioavailability protein and dietary fiber with zero cooking cleanup.",
+            },
+            {
+              id: `meal-${Date.now()}-2`,
+              name: "High-Protein Greek Yogurt / Curd Parfait with Chia Seeds",
+              mealType: "Dinner",
+              cost: Math.min(1.30, budgetPerDay * 0.35),
+              prepTimeMinutes: 2,
+              calories: 410,
+              proteinGrams: 24,
+              appliances: "None (Zero Cooking / Ready-to-eat)",
+              ingredients: ["1 Cup Greek yogurt or plain curd", "Rolled oats (soaked in yogurt)", "Honey or jaggery", "Roasted peanuts"],
+              studentHack: "Letting oats soak in yogurt for 15 minutes softens them completely without any boiling water or microwave.",
+              medicalDietNote: "Casein protein and live probiotics promote gut-brain microbiome health and deep sleep.",
+            },
+          ]
+        : [
+            {
+              id: `meal-${Date.now()}-0`,
+              name: "High-Protein Microwave Oats with Peanut Butter",
+              mealType: "Breakfast",
+              cost: Math.min(1.20, budgetPerDay * 0.25),
+              prepTimeMinutes: 3,
+              calories: 410,
+              proteinGrams: 22,
+              appliances: "Kettle or Microwave",
+              ingredients: ["Rolled oats", "2 tbsp Peanut butter", "Hot water or plant milk", "Cinnamon"],
+              studentHack: "Stir in peanut butter while hot for creamy protein boost without protein powder.",
+              medicalDietNote: isVeg ? "100% vegetarian & budget friendly" : "Easy digestion",
+            },
+            {
+              id: `meal-${Date.now()}-1`,
+              name: isVeg ? "Microwave Black Bean & Rice Fiesta Bowl" : "Tuna & Brown Rice High-Protein Salad",
+              mealType: "Lunch",
+              cost: Math.min(1.80, budgetPerDay * 0.4),
+              prepTimeMinutes: 4,
+              calories: 480,
+              proteinGrams: 28,
+              appliances: "Microwave or No Cooking",
+              ingredients: isVeg
+                ? ["Canned black beans", "Pre-cooked microwave brown rice", "Salsa", "Cheddar or nutritional yeast"]
+                : ["Can of chunk light tuna", "Microwave brown rice", "Soy sauce & lime", "Sweet corn"],
+              studentHack: "Rinse canned beans or fish; mix with warm rice for instant hearty lunch with zero pots to wash.",
+              medicalDietNote: "Rich in complex carbs for sustained cognitive focus without sugar crash",
+            },
+            {
+              id: `meal-${Date.now()}-2`,
+              name: "Mug-Scrambled Eggs & Whole Wheat Toast",
+              mealType: "Dinner",
+              cost: Math.min(1.50, budgetPerDay * 0.35),
+              prepTimeMinutes: 4,
+              calories: 430,
+              proteinGrams: 24,
+              appliances: "Microwave",
+              ingredients: ["2 Fresh eggs", "Salt & pepper", "2 Slices whole wheat bread", "Butter or olive oil"],
+              studentHack: "Whisk eggs in a coffee mug with a fork, microwave 60-70 seconds for fluffy eggs with no skillet.",
+              medicalDietNote: "High choline for memory consolidation during revision",
+            },
+          ];
     }
 
     // Determine initial auto-scaled status (true if exam is within 8 days)
@@ -528,14 +670,14 @@ Return JSON with this exact structure:
     const activeRoutine = isAutoScaled ? generatedScaledRoutine : generatedBaselineRoutine;
 
     const initialTelemetry = {
-      stepsToday: 4200,
+      stepsToday: 0,
       targetSteps: 8000,
-      sleepHours: 6.2,
-      screenOffEstimatedSleep: 6.0,
-      activeMinutes: 20,
-      walkingCadenceRpm: 100,
-      campusStairsClimbed: 4,
-      lastSyncedAt: "Initialized from phone sensors",
+      sleepHours: 0,
+      screenOffEstimatedSleep: 0,
+      activeMinutes: 0,
+      walkingCadenceRpm: 0,
+      campusStairsClimbed: 0,
+      lastSyncedAt: "Initialized from phone sensors (0 steps)",
       source: "Phone Built-in Accelerometer",
     };
 
@@ -1209,6 +1351,17 @@ app.post("/api/user/calorie-log/water", (req, res) => {
     success: true,
     waterGlasses: current.dailyCalorieLog.waterGlasses,
     calorieLog: current.dailyCalorieLog,
+  });
+});
+
+// 15. POST Update Full Daily Activity, Workout & Diet Log (Persistent State)
+app.post("/api/user/daily-log/update", (req, res) => {
+  const current = loadUserData();
+  current.dailyLog = req.body;
+  saveUserData(current);
+  res.json({
+    success: true,
+    dailyLog: current.dailyLog,
   });
 });
 

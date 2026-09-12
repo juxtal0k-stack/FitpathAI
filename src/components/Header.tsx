@@ -14,13 +14,14 @@ import {
   Check,
   Scale,
   Sparkles,
-  Presentation
+  Presentation,
+  ClipboardCheck
 } from 'lucide-react';
 import { StudentProfile } from '../types';
 import { FitnessTheme, ThemeConfig, FITNESS_THEMES } from '../theme';
 import { WatermarkControlPill } from './GymWatermarkBackground';
 
-export type ActiveNavTab = 'routine' | 'scaler' | 'measures' | 'nutrition' | 'diet' | 'sensors' | 'profile';
+export type ActiveNavTab = 'routine' | 'daily-log' | 'scaler' | 'measures' | 'nutrition' | 'diet' | 'sensors' | 'profile';
 
 interface HeaderProps {
   activeTab: ActiveNavTab;
@@ -61,6 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const navItems: { id: ActiveNavTab; label: string; icon: React.ElementType }[] = [
     { id: 'routine', label: 'Workout', icon: Dumbbell },
+    { id: 'daily-log', label: 'Daily Activity & Diet', icon: ClipboardCheck },
     { id: 'scaler', label: 'Exam Adjuster', icon: Brain },
     { id: 'measures', label: 'Physical Measures', icon: Scale },
     { id: 'nutrition', label: 'Food Nutrition', icon: Sparkles },

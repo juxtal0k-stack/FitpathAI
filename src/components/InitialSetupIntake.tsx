@@ -13,7 +13,7 @@ import {
   Calendar,
   ArrowRight
 } from 'lucide-react';
-import { IndividualProfile } from '../types';
+import { IndividualProfile, DormFacilities } from '../types';
 
 interface InitialSetupIntakeProps {
   onComplete: (profileData: any) => Promise<void>;
@@ -47,7 +47,7 @@ export const InitialSetupIntake: React.FC<InitialSetupIntakeProps> = ({ onComple
   const [fitnessLevel, setFitnessLevel] = useState<'beginner' | 'intermediate' | 'active'>('beginner');
   const [preferredLocation, setPreferredLocation] = useState<'home-bodyweight' | 'dorm-room' | 'campus-outdoors' | 'gym'>('home-bodyweight');
   const [budgetPerDay, setBudgetPerDay] = useState<number>(4.5);
-  const [dormFacilities, setDormFacilities] = useState<'kettle-only' | 'microwave-kettle' | 'full-shared-kitchen' | 'standard-kitchen'>('microwave-kettle');
+  const [dormFacilities, setDormFacilities] = useState<DormFacilities>('none');
 
   // Fill quick demo preset for testing
   const loadPreset = (preset: 'student' | 'back-pain') => {
@@ -461,6 +461,7 @@ export const InitialSetupIntake: React.FC<InitialSetupIntakeProps> = ({ onComple
                   onChange={(e) => setDormFacilities(e.target.value as any)}
                   className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
                 >
+                  <option value="none">None (No Appliances / Ready-to-eat)</option>
                   <option value="kettle-only">Electric Kettle Only</option>
                   <option value="microwave-kettle">Microwave + Kettle</option>
                   <option value="full-shared-kitchen">Full Kitchen (Stove & Fridge)</option>

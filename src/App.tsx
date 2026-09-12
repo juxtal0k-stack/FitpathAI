@@ -13,26 +13,49 @@ import { PresentationGuideModal } from './components/PresentationGuideModal';
 import { PhysicalMeasures } from './components/PhysicalMeasures';
 import { FoodNutritionAnalyzer } from './components/FoodNutritionAnalyzer';
 import { GymWatermarkBackground } from './components/GymWatermarkBackground';
+import { DailyActivityLog } from './components/DailyActivityLog';
+import { WaterReminderBar } from './components/WaterReminderBar';
+import { FloatingWaterReminder } from './components/FloatingWaterReminder';
 import { ActiveNavTab } from './components/Header';
 
 import { 
   IndividualProfile, 
   SensorTelemetry, 
   WorkoutRoutine,
-  BudgetMealItem
+  BudgetMealItem,
+  DailyLogState,
+  WorkoutHistoryItem
 } from './types';
 import { FitnessTheme, FITNESS_THEMES } from './theme';
 import { Smartphone, Award } from 'lucide-react';
 
-const FALLBACK_TELEMETRY: SensorTelemetry = {
-  stepsToday: 4200,
+const DEFAULT_DAILY_LOG: DailyLogState = {
+  date: new Date().toISOString().split('T')[0],
+  targetCalories: 2200,
+  activeBurnCalories: 0,
+  items: [],
+  waterGlasses: 0,
+  waterTargetGlasses: 8,
+  workouts: [],
+  dailySteps: 0,
   targetSteps: 8000,
-  sleepHours: 6.2,
-  screenOffEstimatedSleep: 6.0,
-  activeMinutes: 20,
-  walkingCadenceRpm: 98,
-  campusStairsClimbed: 4,
-  lastSyncedAt: 'Sensor Hub Ready',
+  dailyDetails: {
+    energyLevel: 3,
+    sleepHours: 7.0,
+    stressLevel: 'Low',
+    notes: '',
+  },
+};
+
+const FALLBACK_TELEMETRY: SensorTelemetry = {
+  stepsToday: 0,
+  targetSteps: 8000,
+  sleepHours: 0,
+  screenOffEstimatedSleep: 0,
+  activeMinutes: 0,
+  walkingCadenceRpm: 0,
+  campusStairsClimbed: 0,
+  lastSyncedAt: 'Device Sensors Initialized (0 steps)',
   source: 'Phone Built-in Accelerometer',
 };
 
@@ -64,6 +87,33 @@ export default function App() {
   const [scaledRoutine, setScaledRoutine] = useState<WorkoutRoutine | null>(null);
   const [meals, setMeals] = useState<BudgetMealItem[]>([]);
   const [isOffline, setIsOffline] = useState<boolean>(false);
+
+  // Daily Activity & Diet Log state (Starts from zero when fresh)
+  const [dailyLog, setDailyLog] = useState<DailyLogState>(() => {
+    try {
+      const saved = localStorage.getItem('fitpath_daily_log');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.warn('Could not parse local daily log:', e);
+    }
+    return DEFAULT_DAILY_LOG;
+  });
+
+  const handleUpdateDailyLog = async (updated: DailyLogState) => {
+    setDailyLog(updated);
+    try {
+      localStorage.setItem('fitpath_daily_log', JSON.stringify(updated));
+      await fetch('/api/user/daily-log/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+    } catch (err) {
+      console.warn('Failed to sync daily log to server:', err);
+    }
+  };
 
   // PWA Install Prompt for Android and PC
   const [installPrompt, setInstallPrompt] = useState<any>(null);
@@ -113,6 +163,10 @@ export default function App() {
             if (data.telemetry) {
               setTelemetry(data.telemetry);
             }
+            if (data.dailyLog) {
+              setDailyLog(data.dailyLog);
+              localStorage.setItem('fitpath_daily_log', JSON.stringify(data.dailyLog));
+            }
             setHasProfile(true);
           } else {
             setHasProfile(false);
@@ -152,6 +206,10 @@ export default function App() {
     setMeals(data.meals || []);
     if (data.telemetry) {
       setTelemetry(data.telemetry);
+    }
+    if (data.dailyLog) {
+      setDailyLog(data.dailyLog);
+      localStorage.setItem('fitpath_daily_log', JSON.stringify(data.dailyLog));
     }
     setHasProfile(true);
     setActiveTab('routine');
@@ -260,13 +318,15 @@ export default function App() {
     }
   };
 
-  // Reset to New Individual (Wipe server data and restart clean)
+  // Reset to New Individual (Wipe server data, clear localStorage, and restart clean from zero)
   const handleResetToNewIndividual = async () => {
     try {
       await fetch('/api/user/reset', { method: 'POST' });
     } catch (err) {
       console.warn('Reset error:', err);
     }
+    localStorage.removeItem('fitpath_daily_log');
+    setDailyLog(DEFAULT_DAILY_LOG);
     setProfile(null);
     setActiveRoutine(null);
     setBaselineRoutine(null);
@@ -305,21 +365,53 @@ export default function App() {
     setActiveTab('routine');
   };
 
-  // Log completed workout to server
+  // Log completed workout to server and update daily activity & diet log
   const handleLogWorkoutCompletion = async (
-    routineTitle: string,
-    completedCount: number,
-    durationMinutes: number
+    routineTitle: string = 'Completed Routine',
+    completedCount: number = 1,
+    durationMinutes: number = 20,
+    exercises: string[] = []
   ) => {
+    const burnedCalories = Math.round(durationMinutes * 9.5);
+    const newWorkout: WorkoutHistoryItem = {
+      id: `workout-${Date.now()}`,
+      routineTitle,
+      completedCount,
+      totalExercises: exercises.length || completedCount,
+      durationMinutes,
+      burnedCalories,
+      exercisesCompleted: exercises,
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      notes: 'Completed in FitPath Session',
+    };
+
+    const updatedDailyLog: DailyLogState = {
+      ...dailyLog,
+      workouts: [newWorkout, ...dailyLog.workouts],
+      activeBurnCalories: (dailyLog.activeBurnCalories || 0) + burnedCalories,
+    };
+
+    handleUpdateDailyLog(updatedDailyLog);
+
     try {
       await fetch('/api/workout/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ routineTitle, completedCount, durationMinutes }),
+        body: JSON.stringify({ routineTitle, completedCount, durationMinutes, burnedCalories }),
       });
     } catch (e) {
       console.warn('Could not log workout to server:', e);
     }
+  };
+
+  // Quick Water Intake Logger
+  const handleLogWater = (glasses: number = 1) => {
+    const updatedDailyLog: DailyLogState = {
+      ...dailyLog,
+      waterGlasses: Math.max(0, (dailyLog.waterGlasses || 0) + glasses),
+    };
+    handleUpdateDailyLog(updatedDailyLog);
   };
 
   // Sync health telemetry to server
@@ -466,7 +558,10 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+        {/* Default Persistent Water Reminder Bar with Chime & Quick Log */}
+        <WaterReminderBar onDrinkWater={handleLogWater} />
+
         {/* Home Photo Slider on Home/Routine view */}
         {activeTab === 'routine' && (
           <HomePhotoSlider
@@ -485,6 +580,18 @@ export default function App() {
             onToggleRoutine={handleToggleRoutine}
             onOpenAutoScaler={() => setActiveTab('scaler')}
             onLogWorkoutCompletion={handleLogWorkoutCompletion}
+            onLogWater={handleLogWater}
+          />
+        )}
+
+        {activeTab === 'daily-log' && (
+          <DailyActivityLog
+            theme={themeConfig}
+            profile={profile}
+            dailyLog={dailyLog}
+            onUpdateDailyLog={handleUpdateDailyLog}
+            onOpenFoodAnalyzer={() => setActiveTab('nutrition')}
+            onOpenWorkoutTab={() => setActiveTab('routine')}
           />
         )}
 
@@ -588,6 +695,13 @@ export default function App() {
         onLoadPreset={handleLoadSIHPreset}
         onOpenLockScreen={() => setShowLockScreen(true)}
         theme={themeConfig}
+      />
+
+      {/* Floating Water Reminder Icon at Bottom */}
+      <FloatingWaterReminder
+        waterGlasses={dailyLog.waterGlasses || 0}
+        waterTargetGlasses={dailyLog.targetWaterGlasses || 8}
+        onDrinkWater={handleLogWater}
       />
     </div>
   );

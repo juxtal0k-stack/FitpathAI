@@ -283,6 +283,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 onChange={(e) => setFormData({ ...formData, dormFacilities: e.target.value as DormFacilities })}
                 className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
               >
+                <option value="none">None (No Appliances / Ready-to-eat)</option>
                 <option value="kettle-only">Electric Kettle Only</option>
                 <option value="microwave-kettle">Microwave + Kettle</option>
                 <option value="full-shared-kitchen">Full Kitchen (Stove & Fridge)</option>

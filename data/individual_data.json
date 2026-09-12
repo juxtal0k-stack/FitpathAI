@@ -1,219 +1,295 @@
 {
   "exists": true,
   "profile": {
-    "name": "Arjun Sharma",
+    "name": "Rohan Sharma",
     "age": 21,
     "gender": "Male",
-    "heightCm": 175,
+    "heightCm": 176,
     "weightKg": 68,
-    "occupationOrSchedule": "Engineering Student",
-    "examDate": "2026-09-20",
-    "daysUntilExam": 9,
-    "budgetPerDay": 4,
+    "occupationOrSchedule": "B.Tech CS Undergrad (Final Exams in 4 Days)",
+    "examDate": "2026-09-16",
+    "daysUntilExam": 4,
+    "budgetPerDay": 3.5,
     "dormFacilities": "microwave-kettle",
     "fitnessGoal": "stress-relief",
     "fitnessLevel": "beginner",
-    "preferredLocation": "home-bodyweight",
+    "preferredLocation": "dorm-room",
     "medical": {
-      "jointBackIssues": "Lower back tightness from long study sessions",
+      "jointBackIssues": "neck-shoulder",
       "chronicConditions": "none",
-      "dietaryRestrictions": "Vegetarian",
-      "physicalLimitations": "No heavy weights available",
+      "dietaryRestrictions": "vegetarian",
+      "physicalLimitations": "Severe desk neck strain from coding sprints",
       "medicalPrecautions": [
-        "Lower Back Protection: Heavy spinal axial compression and weighted bending avoided.",
+        "Postural Decompression: Focused thoracic extensions & scapular retractions added.",
         "Plant-Based Optimization: High-bioavailability legumes, oats, and nut proteins prioritized."
       ]
     },
-    "updatedAt": "2026-09-11T01:46:55.643Z"
+    "updatedAt": "2026-09-12T08:31:19.506Z"
   },
   "baselineRoutine": {
-    "id": "routine-base-1789091215643",
-    "title": "Stress-Relief Bodyweight Foundation",
-    "durationMinutes": 35,
+    "id": "routine-base-standard-gym",
+    "title": "Standard Gym Hypertrophy & Strength Split",
+    "durationMinutes": 45,
     "intensityLevel": "Moderate",
     "intensityPercent": 75,
-    "examFriendlyNotes": "Designed to be performed in 35 minutes to clear mental fog without inducing excessive fatigue before exams.",
-    "medicalClearanceNotes": "Focuses on neutral spine alignment and low-impact movements to alleviate lower back tightness from sedentary study postures.",
+    "examFriendlyNotes": "Commercial standard gym equipment split. Features Olympic barbells, cable stations, dumbbell racks, and machine presses.",
+    "medicalClearanceNotes": "Full orthopedic posture checklist, acromion spacing clearance, and spinal decompression cues.",
     "exercises": [
       {
-        "name": "Bird-Dog",
-        "sets": 3,
-        "repsOrDuration": "10 reps per side",
-        "dormEquipmentNeeded": "Bodyweight",
-        "targetBenefit": "Core stability and spinal alignment",
-        "postureFocus": "Keep back flat like a table, do not arch",
-        "medicalSafetyNote": "Strengthens stabilizers without loading the spine"
+        "name": "Flat Olympic Barbell Bench Press",
+        "sets": 4,
+        "repsOrDuration": "8-12 reps",
+        "dormEquipmentNeeded": "Olympic Bench, 20kg Olympic Barbell & Weight Plates",
+        "targetBenefit": "Pectoralis Major (Sternal & Clavicular), Triceps Brachii, Anterior Deltoids",
+        "postureFocus": "5-point contact, retract scapulae firmly into bench pad, maintain natural lumbar arch, elbows 45-70°",
+        "medicalSafetyNote": "Subacromial Impingement Prevention: Never flare elbows at 90° or use suicide/thumbless grip.",
+        "level": "moderate",
+        "bodyPart": "chest"
       },
       {
-        "name": "Glute Bridges",
-        "sets": 3,
-        "repsOrDuration": "15 reps",
-        "dormEquipmentNeeded": "Bodyweight",
-        "targetBenefit": "Posterior chain activation",
-        "postureFocus": "Squeeze glutes at the top, avoid hyperextending lower back",
-        "medicalSafetyNote": "Safe for lower back as it avoids vertical compression"
+        "name": "Wide-Grip Lat Pulldown Machine",
+        "sets": 4,
+        "repsOrDuration": "10-12 reps",
+        "dormEquipmentNeeded": "Cable Lat Pulldown Station & Wide Bar",
+        "targetBenefit": "Latissimus Dorsi, Teres Major, Rhomboids, Biceps Brachii",
+        "postureFocus": "Thighs locked under pad, pull smoothly to clavicle, slight 15° torso lean",
+        "medicalSafetyNote": "Cervical Spine Protection: Never pull behind neck; pull to front of chest only.",
+        "level": "easy",
+        "bodyPart": "back"
       },
       {
-        "name": "Wall Push-Ups",
+        "name": "Standing Olympic / EZ-Bar Bicep Curls",
         "sets": 3,
-        "repsOrDuration": "12 reps",
-        "dormEquipmentNeeded": "Wall",
-        "targetBenefit": "Upper body strength",
-        "postureFocus": "Keep elbows tucked at 45 degrees",
-        "medicalSafetyNote": "Reduces strain on shoulders and lower back compared to floor push-ups"
+        "repsOrDuration": "10-12 reps",
+        "dormEquipmentNeeded": "EZ-Curl Bar or Olympic Barbell",
+        "targetBenefit": "Biceps Brachii (Short & Long heads), Brachialis, Forearm Flexors",
+        "postureFocus": "Elbows pinned to flanks, neutral straight wrists, zero lumbar backward swing",
+        "medicalSafetyNote": "Carpal Tunnel Safety: EZ-bar angle reduces wrist supination torque and joint stress.",
+        "level": "moderate",
+        "bodyPart": "biceps"
       },
       {
-        "name": "Bodyweight Squats (to chair)",
+        "name": "Triceps Cable Rope Pushdowns",
+        "sets": 4,
+        "repsOrDuration": "12-15 reps",
+        "dormEquipmentNeeded": "High Cable Pulley & Rope Attachment",
+        "targetBenefit": "Triceps Brachii (Lateral, Medial, and Long Heads)",
+        "postureFocus": "Elbows glued to ribcage, 10° hip hinge, flare rope outward at bottom lockout",
+        "medicalSafetyNote": "Olecranon Bursa Protection: Avoid snapping joints into hyperextended lockout.",
+        "level": "easy",
+        "bodyPart": "triceps"
+      },
+      {
+        "name": "45-Degree Incline Leg Press Machine",
+        "sets": 4,
+        "repsOrDuration": "10-15 reps",
+        "dormEquipmentNeeded": "Plate-Loaded 45-Degree Leg Press Machine",
+        "targetBenefit": "Quadriceps, Gluteus Maximus, Hamstrings & Calves",
+        "postureFocus": "Back and hips flat on backrest pad, feet shoulder-width, soft micro-bend at top",
+        "medicalSafetyNote": "Spinal Disc & Patellar Safety: Never lock knees out or allow glutes to lift off seat.",
+        "level": "intense",
+        "bodyPart": "legs"
+      },
+      {
+        "name": "Seated Dumbbell Shoulder Overhead Press",
         "sets": 3,
-        "repsOrDuration": "12 reps",
-        "dormEquipmentNeeded": "Chair",
-        "targetBenefit": "Leg strength and circulation",
-        "postureFocus": "Chest up, weight in heels",
-        "medicalSafetyNote": "Chair provides a depth limit to protect knees"
+        "repsOrDuration": "10-12 reps",
+        "dormEquipmentNeeded": "Adjustable Gym Incline/Vertical Bench & Dumbbells",
+        "targetBenefit": "Anterior & Medial Deltoids, Trapezius, Core Stabilizers",
+        "postureFocus": "Vertical backrest support, press in scapular plane 30° forward of coronal plane",
+        "medicalSafetyNote": "Rotator Cuff Clearance: Avoid pressing behind neck; keep elbows slightly forward.",
+        "level": "moderate",
+        "bodyPart": "shoulders"
+      },
+      {
+        "name": "Hanging Knee / Leg Raises on Captain's Chair",
+        "sets": 3,
+        "repsOrDuration": "12-15 reps",
+        "dormEquipmentNeeded": "Captain's Chair / Roman Chair or Pull-up Rig",
+        "targetBenefit": "Rectus Abdominis, Transverse Abdominis, Iliopsoas",
+        "postureFocus": "Forearms anchored firmly on arm rests, tuck knees to chest without swinging",
+        "medicalSafetyNote": "Lumbar Decompression: Excellent for decompressing spine after heavy squats or desk work.",
+        "level": "moderate",
+        "bodyPart": "core"
       }
     ]
   },
   "scaledRoutine": {
-    "id": "routine-scaled-1789091215643",
-    "title": "Restorative Deload Routine",
-    "durationMinutes": 18,
+    "id": "routine-scaled-gym-deload",
+    "title": "Restorative Gym Mobility & Cable Deload",
+    "durationMinutes": 20,
     "intensityLevel": "Low (Restorative)",
     "intensityPercent": 40,
-    "examFriendlyNotes": "Shortened 18m routine to prevent CNS burnout during exams/stress",
-    "medicalClearanceNotes": "Focuses on mobility, stress relief, and gentle posture recovery",
+    "examFriendlyNotes": "Shortened 20m routine using cable stations and light machines to decompress spine and relieve CNS stress.",
+    "medicalClearanceNotes": "Focuses on mobility, stress relief, and gentle joint recovery without axial load.",
     "exercises": [
       {
-        "name": "Cat-Cow Stretch",
+        "name": "Wide-Grip Lat Pulldown Machine",
         "sets": 2,
-        "repsOrDuration": "10 breaths",
-        "dormEquipmentNeeded": "Bodyweight",
-        "targetBenefit": "Spinal mobility and tension release",
-        "postureFocus": "Move with the breath, slow controlled motion",
-        "medicalSafetyNote": "Gentle on joints and relieves lumbar stiffness"
+        "repsOrDuration": "12 light reps",
+        "dormEquipmentNeeded": "Cable Station",
+        "targetBenefit": "Upper back posture & thoracic opening",
+        "postureFocus": "Gentle controlled cadence",
+        "medicalSafetyNote": "Lightweight for postural relief",
+        "level": "easy",
+        "bodyPart": "back"
       },
       {
-        "name": "Seated Forward Fold",
+        "name": "Triceps Cable Rope Pushdowns",
         "sets": 2,
-        "repsOrDuration": "60 seconds",
-        "dormEquipmentNeeded": "Chair",
-        "targetBenefit": "Hamstring and lower back release",
-        "postureFocus": "Hinge at hips, keep spine long",
-        "medicalSafetyNote": "Avoids rounding the lower back excessively"
+        "repsOrDuration": "15 light reps",
+        "dormEquipmentNeeded": "High Cable Pulley",
+        "targetBenefit": "Elbow joint circulation",
+        "postureFocus": "Smooth motion, no strain",
+        "medicalSafetyNote": "Promotes synovial fluid circulation",
+        "level": "easy",
+        "bodyPart": "triceps"
       }
     ]
   },
   "activeRoutine": {
-    "id": "routine-base-1789091215643",
-    "title": "Stress-Relief Bodyweight Foundation",
-    "durationMinutes": 35,
+    "id": "routine-base-standard-gym",
+    "title": "Standard Gym Hypertrophy & Strength Split",
+    "durationMinutes": 45,
     "intensityLevel": "Moderate",
     "intensityPercent": 75,
-    "examFriendlyNotes": "Designed to be performed in 35 minutes to clear mental fog without inducing excessive fatigue before exams.",
-    "medicalClearanceNotes": "Focuses on neutral spine alignment and low-impact movements to alleviate lower back tightness from sedentary study postures.",
+    "examFriendlyNotes": "Commercial standard gym equipment split. Features Olympic barbells, cable stations, dumbbell racks, and machine presses.",
+    "medicalClearanceNotes": "Full orthopedic posture checklist, acromion spacing clearance, and spinal decompression cues.",
     "exercises": [
       {
-        "name": "Bird-Dog",
-        "sets": 3,
-        "repsOrDuration": "10 reps per side",
-        "dormEquipmentNeeded": "Bodyweight",
-        "targetBenefit": "Core stability and spinal alignment",
-        "postureFocus": "Keep back flat like a table, do not arch",
-        "medicalSafetyNote": "Strengthens stabilizers without loading the spine"
+        "name": "Flat Olympic Barbell Bench Press",
+        "sets": 4,
+        "repsOrDuration": "8-12 reps",
+        "dormEquipmentNeeded": "Olympic Bench, 20kg Olympic Barbell & Weight Plates",
+        "targetBenefit": "Pectoralis Major (Sternal & Clavicular), Triceps Brachii, Anterior Deltoids",
+        "postureFocus": "5-point contact, retract scapulae firmly into bench pad, maintain natural lumbar arch, elbows 45-70°",
+        "medicalSafetyNote": "Subacromial Impingement Prevention: Never flare elbows at 90° or use suicide/thumbless grip.",
+        "level": "moderate",
+        "bodyPart": "chest"
       },
       {
-        "name": "Glute Bridges",
-        "sets": 3,
-        "repsOrDuration": "15 reps",
-        "dormEquipmentNeeded": "Bodyweight",
-        "targetBenefit": "Posterior chain activation",
-        "postureFocus": "Squeeze glutes at the top, avoid hyperextending lower back",
-        "medicalSafetyNote": "Safe for lower back as it avoids vertical compression"
+        "name": "Wide-Grip Lat Pulldown Machine",
+        "sets": 4,
+        "repsOrDuration": "10-12 reps",
+        "dormEquipmentNeeded": "Cable Lat Pulldown Station & Wide Bar",
+        "targetBenefit": "Latissimus Dorsi, Teres Major, Rhomboids, Biceps Brachii",
+        "postureFocus": "Thighs locked under pad, pull smoothly to clavicle, slight 15° torso lean",
+        "medicalSafetyNote": "Cervical Spine Protection: Never pull behind neck; pull to front of chest only.",
+        "level": "easy",
+        "bodyPart": "back"
       },
       {
-        "name": "Wall Push-Ups",
+        "name": "Standing Olympic / EZ-Bar Bicep Curls",
         "sets": 3,
-        "repsOrDuration": "12 reps",
-        "dormEquipmentNeeded": "Wall",
-        "targetBenefit": "Upper body strength",
-        "postureFocus": "Keep elbows tucked at 45 degrees",
-        "medicalSafetyNote": "Reduces strain on shoulders and lower back compared to floor push-ups"
+        "repsOrDuration": "10-12 reps",
+        "dormEquipmentNeeded": "EZ-Curl Bar or Olympic Barbell",
+        "targetBenefit": "Biceps Brachii (Short & Long heads), Brachialis, Forearm Flexors",
+        "postureFocus": "Elbows pinned to flanks, neutral straight wrists, zero lumbar backward swing",
+        "medicalSafetyNote": "Carpal Tunnel Safety: EZ-bar angle reduces wrist supination torque and joint stress.",
+        "level": "moderate",
+        "bodyPart": "biceps"
       },
       {
-        "name": "Bodyweight Squats (to chair)",
+        "name": "Triceps Cable Rope Pushdowns",
+        "sets": 4,
+        "repsOrDuration": "12-15 reps",
+        "dormEquipmentNeeded": "High Cable Pulley & Rope Attachment",
+        "targetBenefit": "Triceps Brachii (Lateral, Medial, and Long Heads)",
+        "postureFocus": "Elbows glued to ribcage, 10° hip hinge, flare rope outward at bottom lockout",
+        "medicalSafetyNote": "Olecranon Bursa Protection: Avoid snapping joints into hyperextended lockout.",
+        "level": "easy",
+        "bodyPart": "triceps"
+      },
+      {
+        "name": "45-Degree Incline Leg Press Machine",
+        "sets": 4,
+        "repsOrDuration": "10-15 reps",
+        "dormEquipmentNeeded": "Plate-Loaded 45-Degree Leg Press Machine",
+        "targetBenefit": "Quadriceps, Gluteus Maximus, Hamstrings & Calves",
+        "postureFocus": "Back and hips flat on backrest pad, feet shoulder-width, soft micro-bend at top",
+        "medicalSafetyNote": "Spinal Disc & Patellar Safety: Never lock knees out or allow glutes to lift off seat.",
+        "level": "intense",
+        "bodyPart": "legs"
+      },
+      {
+        "name": "Seated Dumbbell Shoulder Overhead Press",
         "sets": 3,
-        "repsOrDuration": "12 reps",
-        "dormEquipmentNeeded": "Chair",
-        "targetBenefit": "Leg strength and circulation",
-        "postureFocus": "Chest up, weight in heels",
-        "medicalSafetyNote": "Chair provides a depth limit to protect knees"
+        "repsOrDuration": "10-12 reps",
+        "dormEquipmentNeeded": "Adjustable Gym Incline/Vertical Bench & Dumbbells",
+        "targetBenefit": "Anterior & Medial Deltoids, Trapezius, Core Stabilizers",
+        "postureFocus": "Vertical backrest support, press in scapular plane 30° forward of coronal plane",
+        "medicalSafetyNote": "Rotator Cuff Clearance: Avoid pressing behind neck; keep elbows slightly forward.",
+        "level": "moderate",
+        "bodyPart": "shoulders"
+      },
+      {
+        "name": "Hanging Knee / Leg Raises on Captain's Chair",
+        "sets": 3,
+        "repsOrDuration": "12-15 reps",
+        "dormEquipmentNeeded": "Captain's Chair / Roman Chair or Pull-up Rig",
+        "targetBenefit": "Rectus Abdominis, Transverse Abdominis, Iliopsoas",
+        "postureFocus": "Forearms anchored firmly on arm rests, tuck knees to chest without swinging",
+        "medicalSafetyNote": "Lumbar Decompression: Excellent for decompressing spine after heavy squats or desk work.",
+        "level": "moderate",
+        "bodyPart": "core"
       }
     ]
   },
   "isAutoScaled": false,
   "meals": [
     {
-      "id": "meal-1789091215643-0",
-      "name": "Overnight Protein Oats",
+      "id": "meal-gym-0",
+      "name": "Oatmeal Peanut Butter Power Bowl",
       "mealType": "Breakfast",
-      "cost": 1.25,
-      "prepTimeMinutes": 4,
-      "calories": 420,
-      "proteinGrams": 24,
+      "cost": 1.1,
+      "prepTimeMinutes": 5,
+      "calories": 450,
+      "proteinGrams": 18,
       "appliances": "kettle",
       "ingredients": [
         "Rolled oats",
         "Peanut butter",
-        "Soy milk",
-        "Chia seeds"
+        "Milk/Soy milk"
       ],
-      "studentHack": "Prepare in a jar the night before using hot water from the kettle to soften oats.",
-      "medicalDietNote": "Vegetarian, high fiber for sustained energy."
+      "studentHack": "Use the kettle to boil water, pour over oats in a bowl, cover for 3 mins.",
+      "medicalDietNote": "Vegetarian, easy to digest for workout fuel and study focus"
     },
     {
-      "id": "meal-1789091215643-1",
-      "name": "Microwave Lentil & Rice Bowl",
+      "id": "meal-gym-1",
+      "name": "Microwave Lentil & Rice High-Protein Bowl",
       "mealType": "Lunch/Dinner",
-      "cost": 1.5,
+      "cost": 1.2,
       "prepTimeMinutes": 8,
-      "calories": 550,
-      "proteinGrams": 22,
+      "calories": 520,
+      "proteinGrams": 24,
       "appliances": "microwave",
       "ingredients": [
-        "Pre-cooked rice pouch",
+        "Pre-cooked brown rice pouch",
         "Canned lentils",
-        "Frozen spinach",
-        "Soy sauce"
+        "Spices & olive oil"
       ],
-      "studentHack": "Use a microwave-safe bowl; steam spinach on top of rice for 2 minutes.",
-      "medicalDietNote": "Vegetarian, provides complex carbs for brain function."
-    },
-    {
-      "id": "meal-1789091215643-2",
-      "name": "Greek Yogurt & Nut Snack",
-      "mealType": "Snack",
-      "cost": 1.25,
-      "prepTimeMinutes": 1,
-      "calories": 300,
-      "proteinGrams": 18,
-      "appliances": "none",
-      "ingredients": [
-        "Plain Greek yogurt",
-        "Handful of peanuts"
-      ],
-      "studentHack": "Buy large tubs of yogurt to keep costs under $4/day.",
-      "medicalDietNote": "Vegetarian, high protein for muscle recovery."
+      "studentHack": "Buy canned lentils; rinse and microwave with rice for a complete muscle-recovery meal.",
+      "medicalDietNote": "Vegetarian, high fiber and complex carbohydrates for sustained energy"
     }
   ],
   "telemetry": {
-    "stepsToday": 4200,
+    "stepsToday": 0,
     "targetSteps": 8000,
-    "sleepHours": 6.2,
-    "screenOffEstimatedSleep": 6,
-    "activeMinutes": 20,
-    "walkingCadenceRpm": 100,
-    "campusStairsClimbed": 4,
-    "lastSyncedAt": "Initialized from phone sensors",
+    "sleepHours": 0,
+    "screenOffEstimatedSleep": 0,
+    "activeMinutes": 0,
+    "walkingCadenceRpm": 0,
+    "campusStairsClimbed": 0,
+    "lastSyncedAt": "Device Sensors Initialized (0 steps)",
     "source": "Phone Built-in Accelerometer"
   },
-  "workoutHistory": []
+  "workoutHistory": [],
+  "dailyCalorieLog": {
+    "date": "2026-09-12",
+    "targetCalories": 2250,
+    "activeBurnCalories": 0,
+    "items": [],
+    "waterGlasses": 0,
+    "waterTargetGlasses": 8
+  }
 }

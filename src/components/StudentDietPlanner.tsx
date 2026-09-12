@@ -46,7 +46,7 @@ export const StudentDietPlanner: React.FC<StudentDietPlannerProps> = ({
   const [newMealCost, setNewMealCost] = useState(1.5);
   const [newMealProtein, setNewMealProtein] = useState(20);
   const [newMealCalories, setNewMealCalories] = useState(400);
-  const [newMealAppliances, setNewMealAppliances] = useState('Microwave');
+  const [newMealAppliances, setNewMealAppliances] = useState('None (No cooking / Ready-to-eat)');
 
   const totalCost = meals.reduce((sum, m) => sum + m.cost, 0);
   const totalProtein = meals.reduce((sum, m) => sum + m.proteinGrams, 0);
@@ -333,6 +333,21 @@ export const StudentDietPlanner: React.FC<StudentDietPlannerProps> = ({
                     className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg text-slate-900"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Required Appliance</label>
+                <select
+                  value={newMealAppliances}
+                  onChange={(e) => setNewMealAppliances(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg text-slate-900"
+                >
+                  <option value="None (No cooking / Ready-to-eat)">None (No cooking / Ready-to-eat)</option>
+                  <option value="Electric Kettle Only">Electric Kettle Only</option>
+                  <option value="Microwave Only">Microwave Only</option>
+                  <option value="Microwave + Kettle">Microwave + Kettle</option>
+                  <option value="Full Kitchen / Stove">Full Kitchen / Stove</option>
+                </select>
               </div>
 
               <div className="pt-3 flex items-center justify-end gap-2">
