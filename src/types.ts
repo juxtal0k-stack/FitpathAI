@@ -10,13 +10,62 @@ export interface MedicalData {
   medicalPrecautions: string[]; // Server-generated precautions
 }
 
+export interface DoctorAlertConfig {
+  id?: string;
+  doctorName: string;
+  clinicName?: string;
+  specialty?: string;
+  appointmentDate: string; // YYYY-MM-DD
+  appointmentTime: string; // HH:MM
+  notes?: string;
+  enabled: boolean;
+  soundEnabled: boolean;
+  triggered?: boolean;
+}
+
+export interface DeviceVisitItem {
+  id: string;
+  placeName: string;
+  latitude: number;
+  longitude: number;
+  distanceKm: number;
+  category: 'Clinic/Doctor' | 'Gym' | 'Campus' | 'Park/Outdoor' | 'Home' | 'Library' | 'Market' | 'Other';
+  notes?: string;
+  timestamp: string;
+}
+
+export interface DeviceLocationState {
+  latitude: number;
+  longitude: number;
+  address: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
+  totalDistanceKm: number;
+  lastUpdated: string;
+}
+
 export interface IndividualProfile {
   id?: string;
   name: string;
+  fatherName?: string;
+  dob?: string;
   age?: number;
   gender?: string;
+  phoneCountryCode?: string;
+  phoneNumber?: string;
+  email?: string;
+  password?: string;
+  addressCountry?: string;
+  addressState?: string;
+  addressCity?: string;
+  addressLine?: string;
+  postalCode?: string;
   heightCm?: number;
+  heightUnit?: 'cm' | 'm';
   weightKg?: number;
+  bloodGroup?: string;
   occupationOrSchedule?: string;
   major?: string; // backward compatibility
   examDate: string; // YYYY-MM-DD
@@ -27,13 +76,18 @@ export interface IndividualProfile {
   fitnessLevel?: FitnessLevel;
   preferredLocation: 'home-bodyweight' | 'dorm-room' | 'campus-outdoors' | 'gym' | 'student-rec-gym';
   medical?: MedicalData;
+  doctorAlert?: DoctorAlertConfig;
+  deviceLocation?: DeviceLocationState;
+  deviceVisits?: DeviceVisitItem[];
   sensorConnected: {
     googleFit: boolean;
     appleHealth: boolean;
   };
   hasSmartwatch: boolean;
+  customFields?: Record<string, any>;
   createdAt?: string;
   updatedAt?: string;
+  [key: string]: any;
 }
 
 export type StudentProfile = IndividualProfile;

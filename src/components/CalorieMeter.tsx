@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Flame, 
@@ -13,7 +13,8 @@ import {
   Coffee,
   Apple,
   UtensilsCrossed,
-  ShieldCheck
+  ShieldCheck,
+  Trash2
 } from 'lucide-react';
 import { ThemeConfig } from '../theme';
 
@@ -46,35 +47,49 @@ export const CalorieMeter: React.FC<CalorieMeterProps> = ({
   onLogCurrentFood,
 }) => {
   const [dailyTarget, setDailyTarget] = useState<number>(2100);
-  const [loggedMeals, setLoggedMeals] = useState<LoggedMeal[]>([
-    {
-      id: 'm-1',
-      name: 'Rolled Oats & Peanut Butter',
-      calories: 420,
-      mealType: 'Breakfast',
-      time: '08:30 AM',
-    },
-    {
-      id: 'm-2',
-      name: 'Dal Tadka, 2 Rotis & Curd Bowl',
-      calories: 560,
-      mealType: 'Lunch',
-      time: '01:15 PM',
-    },
-    {
-      id: 'm-3',
-      name: 'Green Tea & Roasted Chana',
-      calories: 140,
-      mealType: 'Snack',
-      time: '04:45 PM',
-    },
-  ]);
+  const [loggedMeals, setLoggedMeals] = useState<LoggedMeal[]>([]);
+
+  // Load real logged meals from server on mount
+  useEffect(() => {
+    let isMounted = true;
+    const loadLog = async () => {
+      try {
+        const res = await fetch('/api/user/calorie-log');
+        if (res.ok) {
+          const json = await res.json();
+          if (isMounted && json.data) {
+            if (Array.isArray(json.data.items)) {
+              setLoggedMeals(
+                json.data.items.map((item: any) => ({
+                  id: item.id || `m-${Date.now()}`,
+                  name: item.foodName || item.name || 'Food item',
+                  calories: Number(item.calories) || 0,
+                  mealType: item.mealType || 'Snack',
+                  time: item.timestamp || item.time || 'Today',
+                }))
+              );
+            }
+            if (typeof json.data.targetCalories === 'number') {
+              setDailyTarget(json.data.targetCalories);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load calorie log in CalorieMeter:', err);
+      }
+    };
+    loadLog();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const [showPresetMenu, setShowPresetMenu] = useState<boolean>(false);
   const [addedAnimation, setAddedAnimation] = useState<boolean>(false);
 
   // Totals calculations
-  const loggedTotal = loggedMeals.reduce((acc, m) => acc + m.calories, 0);
+  const mealsList = Array.isArray(loggedMeals) ? loggedMeals : [];
+  const loggedTotal = mealsList.reduce((acc, m) => acc + (m?.calories || 0), 0);
   const projectedTotal = loggedTotal + currentFoodCalories;
   const loggedPercent = Math.min(130, Math.round((loggedTotal / dailyTarget) * 100));
   const projectedPercent = Math.min(130, Math.round((projectedTotal / dailyTarget) * 100));
@@ -129,7 +144,7 @@ export const CalorieMeter: React.FC<CalorieMeterProps> = ({
   const loggedOffset = circumference - (Math.min(100, loggedPercent) / 100) * circumference;
   const projectedOffset = circumference - (Math.min(100, projectedPercent) / 100) * circumference;
 
-  const handleAddCurrentToMeter = () => {
+  const handleAddCurrentToMeter = async () => {
     if (currentFoodCalories <= 0) return;
     const newMeal: LoggedMeal = {
       id: `m-${Date.now()}`,
@@ -141,10 +156,25 @@ export const CalorieMeter: React.FC<CalorieMeterProps> = ({
     setLoggedMeals((prev) => [newMeal, ...prev]);
     setAddedAnimation(true);
     setTimeout(() => setAddedAnimation(false), 2000);
+
+    try {
+      await fetch('/api/user/calorie-log/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          foodName: newMeal.name,
+          mealType: newMeal.mealType,
+          calories: newMeal.calories,
+        }),
+      });
+    } catch (err) {
+      console.warn('Failed to persist to calorie log API:', err);
+    }
+
     if (onLogCurrentFood) onLogCurrentFood();
   };
 
-  const handleQuickAdd = (calories: number, name: string, type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack') => {
+  const handleQuickAdd = async (calories: number, name: string, type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack') => {
     const newMeal: LoggedMeal = {
       id: `m-${Date.now()}`,
       name,
@@ -153,6 +183,33 @@ export const CalorieMeter: React.FC<CalorieMeterProps> = ({
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
     setLoggedMeals((prev) => [newMeal, ...prev]);
+
+    try {
+      await fetch('/api/user/calorie-log/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          foodName: name,
+          mealType: type,
+          calories,
+        }),
+      });
+    } catch (err) {
+      console.warn('Failed to persist quick add meal:', err);
+    }
+  };
+
+  const handleDeleteEntry = async (id: string) => {
+    setLoggedMeals((prev) => prev.filter((m) => m.id !== id));
+    try {
+      await fetch('/api/user/calorie-log/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+    } catch (err) {
+      console.warn('Failed to delete meal from calorie log:', err);
+    }
   };
 
   const handleResetMeter = () => {
@@ -473,9 +530,19 @@ export const CalorieMeter: React.FC<CalorieMeterProps> = ({
                     {meal.mealType} • {meal.time}
                   </div>
                 </div>
-                <span className="font-extrabold text-emerald-800 shrink-0">
-                  +{meal.calories}
-                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="font-extrabold text-emerald-800">
+                    +{meal.calories}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEntry(meal.id)}
+                    className="p-1 rounded text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                    title="Remove item"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>

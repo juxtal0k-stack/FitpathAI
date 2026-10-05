@@ -14,7 +14,8 @@ import {
   Brain,
   ArrowRight,
   Scale,
-  Lock
+  Lock,
+  Compass
 } from 'lucide-react';
 import { ThemeConfig } from '../theme';
 import { ActiveNavTab } from './Header';
@@ -41,7 +42,7 @@ const SLIDES: SlideData[] = [
   {
     id: 'mobility',
     image: sihFitnessHero,
-    badge: 'SIH PROTOTYPE • ZERO EQUIPMENT',
+    badge: 'ZERO EQUIPMENT • RECOVERY',
     badgeIcon: Flame,
     title: '15-Minute Dorm Mobility & Posture Reset',
     highlight: 'Combat 8-Hour Study Slouch',
@@ -54,7 +55,7 @@ const SLIDES: SlideData[] = [
   {
     id: 'measures',
     image: sihRunnerWallpaper,
-    badge: 'SIH PROTOTYPE • CLINICAL BIOMETRICS',
+    badge: 'CLINICAL BIOMETRICS & ENERGY',
     badgeIcon: Scale,
     title: 'Physical Measures & Dynamic Calorie Counter',
     highlight: 'BMI, BMR & Net Step Burn Tracking',
@@ -67,7 +68,7 @@ const SLIDES: SlideData[] = [
   {
     id: 'nutrition',
     image: sihDietHero,
-    badge: 'SIH PROTOTYPE • FOOD NUTRITION REST API',
+    badge: 'FOOD NUTRITION ENGINE',
     badgeIcon: Sparkles,
     title: 'Instant Food Nutrition & Cognitive Impact Measure',
     highlight: 'Exact Protein, Fat, Carbs & Exam Stamina',
@@ -78,22 +79,22 @@ const SLIDES: SlideData[] = [
     actionTab: 'nutrition',
   },
   {
-    id: 'diet',
+    id: 'map',
     image: sihDietHero,
-    badge: 'SIH PROTOTYPE • MICRO-BUDGET',
-    badgeIcon: Utensils,
-    title: 'Cognitive Focus Bowls Under ₹120 / $1.50',
-    highlight: 'Kettle & Microwave Prep Only',
-    description: 'High-bioavailability protein paired with low-glycemic oats and healthy fats to eliminate energy crashes during intense exam revisions.',
-    metric1: { label: 'Protein / Meal', value: '24g Protein' },
-    metric2: { label: 'Daily Budget', value: '< $4.50 / Day' },
-    actionLabel: 'View Meal Recipes',
-    actionTab: 'diet',
+    badge: 'GOOGLE MAPS TRACKER',
+    badgeIcon: Compass,
+    title: 'Device Location & Distance Travel Tracking',
+    highlight: 'Google Maps Platform Integration',
+    description: 'Track real-time distance traveled and check recent device visits plotted with base origin coordinates.',
+    metric1: { label: 'Mapping Data', value: 'Google Maps' },
+    metric2: { label: 'Distance Sync', value: '1s Active' },
+    actionLabel: 'Track Device Location',
+    actionTab: 'map',
   },
   {
     id: 'telemetry',
     image: sihRunnerWallpaper,
-    badge: 'SIH PROTOTYPE • ZERO HARDWARE',
+    badge: 'ZERO HARDWARE • SMARTPHONE SENSORS',
     badgeIcon: Smartphone,
     title: 'Phone Accelerometer Cadence & Sleep Detection',
     highlight: 'No Smartwatch Required',
@@ -106,7 +107,7 @@ const SLIDES: SlideData[] = [
   {
     id: 'scaler',
     image: sihFitnessHero,
-    badge: 'SIH PROTOTYPE • CORTISOL SHIELD',
+    badge: 'STRESS-ADAPTIVE PROTOCOL',
     badgeIcon: Brain,
     title: 'Exam Stress Auto-Scaler & Dynamic Deload',
     highlight: 'Preserve Nervous System Energy',

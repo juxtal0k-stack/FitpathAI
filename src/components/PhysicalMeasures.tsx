@@ -182,10 +182,11 @@ export const PhysicalMeasures: React.FC<PhysicalMeasuresProps> = ({
   };
 
   // Computations for Daily Calorie Counter
-  const totalCaloriesConsumed = calorieLog?.items.reduce((acc, item) => acc + item.calories, 0) || 0;
-  const totalProteinConsumed = calorieLog?.items.reduce((acc, item) => acc + item.proteinGrams, 0) || 0;
-  const totalFatConsumed = calorieLog?.items.reduce((acc, item) => acc + item.fatGrams, 0) || 0;
-  const totalCarbsConsumed = calorieLog?.items.reduce((acc, item) => acc + item.carbsGrams, 0) || 0;
+  const logItems = Array.isArray(calorieLog?.items) ? calorieLog.items : [];
+  const totalCaloriesConsumed = logItems.reduce((acc, item) => acc + (item.calories || 0), 0);
+  const totalProteinConsumed = logItems.reduce((acc, item) => acc + (item.proteinGrams || 0), 0);
+  const totalFatConsumed = logItems.reduce((acc, item) => acc + (item.fatGrams || 0), 0);
+  const totalCarbsConsumed = logItems.reduce((acc, item) => acc + (item.carbsGrams || 0), 0);
 
   const targetBudget = metrics?.targetCalories || 2250;
   const activeBurn = metrics?.activeBurnFromSteps || Math.round(telemetry.stepsToday * 0.04);
@@ -749,13 +750,13 @@ export const PhysicalMeasures: React.FC<PhysicalMeasuresProps> = ({
               <h3 className={`text-sm font-bold ${theme.textPrimary}`}>Today's Meals Logged</h3>
             </div>
             <span className="text-[11px] font-bold text-slate-400">
-              {calorieLog?.items.length || 0} items
+              {logItems.length} items
             </span>
           </div>
 
           {/* List of items */}
           <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-            {(!calorieLog?.items || calorieLog.items.length === 0) ? (
+            {logItems.length === 0 ? (
               <div className="text-center py-8 space-y-2">
                 <Utensils className="w-8 h-8 text-slate-300 dark:text-slate-700 mx-auto" />
                 <p className="text-xs text-slate-400">No foods logged today yet.</p>
@@ -767,7 +768,7 @@ export const PhysicalMeasures: React.FC<PhysicalMeasuresProps> = ({
                 </button>
               </div>
             ) : (
-              calorieLog.items.map((item) => (
+              logItems.map((item) => (
                 <motion.div
                   key={item.id}
                   initial={{ opacity: 0, x: -10 }}

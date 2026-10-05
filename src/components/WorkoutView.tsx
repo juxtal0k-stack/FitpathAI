@@ -21,7 +21,8 @@ import {
   BookOpen,
   Play,
   Filter,
-  Target
+  Target,
+  Brain
 } from 'lucide-react';
 import { 
   IndividualProfile, 
@@ -322,74 +323,84 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
   const stepProgress = Math.min(100, Math.round((telemetry.stepsToday / telemetry.targetSteps) * 100));
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 text-slate-900">
+    <div className="max-w-4xl mx-auto space-y-6 text-white">
       {/* TRAINING PROTOCOL SWITCHER BAR */}
-      <div className="bg-white border border-slate-300 rounded-2xl p-4 shadow-sm space-y-3">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-md space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-emerald-700" />
-              <h3 className="text-sm font-extrabold text-slate-950 uppercase tracking-wider">
+              <Layers className="w-4 h-4 text-emerald-400" />
+              <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">
                 Select Training Protocol
               </h3>
             </div>
-            <p className="text-xs text-slate-700 font-medium mt-0.5">
-              Choose zero-equipment home routine, high-intensity hybrid, standard gym, or exam deload.
+            <p className="text-xs text-slate-400 font-medium mt-0.5">
+              Switch seamlessly between zero-equipment home, standard gym, hybrid, or exam deload.
             </p>
           </div>
 
-          {/* 4-Way Mode Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+          {/* 4-Way Mode Tabs + Popup Window Action */}
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-950 rounded-2xl border border-slate-800">
             <button
               type="button"
               onClick={() => handleSwitchMode('standard')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                 trainingMode === 'standard'
-                  ? 'bg-blue-700 text-white shadow-xs'
-                  : 'text-slate-700 hover:text-slate-950'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               <Dumbbell className="w-3.5 h-3.5 text-blue-200" />
-              <span>🏋️ Standard Gym</span>
+              <span>Standard Gym</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleSwitchMode('home')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                 trainingMode === 'home'
-                  ? 'bg-emerald-700 text-white shadow-xs'
-                  : 'text-slate-700 hover:text-slate-950'
+                  ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Home className="w-3.5 h-3.5 text-emerald-200" />
-              <span>🏠 Home (No Gym)</span>
+              <Home className="w-3.5 h-3.5" />
+              <span>Home (No Gym)</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleSwitchMode('hybrid')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                 trainingMode === 'hybrid'
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'text-slate-700 hover:text-slate-950'
+                  ? 'bg-amber-500 text-slate-950 shadow-xs'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Zap className="w-3.5 h-3.5 text-amber-200" />
-              <span>⚡ Hybrid</span>
+              <Zap className="w-3.5 h-3.5" />
+              <span>Hybrid</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleSwitchMode('deload')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                 trainingMode === 'deload'
-                  ? 'bg-indigo-700 text-white shadow-xs'
-                  : 'text-slate-700 hover:text-slate-950'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               <Moon className="w-3.5 h-3.5 text-indigo-200" />
               <span>Exam Deload</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenAutoScaler}
+              className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-indigo-300 hover:bg-slate-700 border border-slate-700 transition cursor-pointer flex items-center gap-1 shadow-2xs"
+              title="Open Exam Deload popup window to simulate sleep debt & exam proximity"
+            >
+              <Brain className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="hidden sm:inline">Tune Deload</span>
             </button>
           </div>
         </div>
@@ -399,23 +410,23 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="pt-3 border-t border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs"
+            className="pt-3 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs"
           >
-            <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
-              <span className="text-[10px] font-bold text-emerald-900 block">Equipment Required</span>
-              <span className="font-extrabold text-emerald-950">100% Zero Equipment</span>
+            <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-800/60">
+              <span className="text-[10px] font-bold text-emerald-400 block">Equipment Required</span>
+              <span className="font-extrabold text-emerald-200">100% Zero Equipment</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200">
-              <span className="text-[10px] font-bold text-blue-900 block">Environment</span>
-              <span className="font-extrabold text-blue-950">Dorm / Bedside / Living Room</span>
+            <div className="p-2.5 rounded-xl bg-blue-950/40 border border-blue-800/60">
+              <span className="text-[10px] font-bold text-blue-400 block">Environment</span>
+              <span className="font-extrabold text-blue-200">Dorm / Bedside / Floor</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200">
-              <span className="text-[10px] font-bold text-amber-900 block">Est. Calorie Burn</span>
-              <span className="font-extrabold text-amber-950">~260 - 320 kcal</span>
+            <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-800/60">
+              <span className="text-[10px] font-bold text-amber-400 block">Est. Calorie Burn</span>
+              <span className="font-extrabold text-amber-200">~260 - 320 kcal</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200">
-              <span className="text-[10px] font-bold text-purple-900 block">Posture Recovery</span>
-              <span className="font-extrabold text-purple-950">Decompresses Spine & Neck</span>
+            <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-800/60">
+              <span className="text-[10px] font-bold text-purple-400 block">Posture Recovery</span>
+              <span className="font-extrabold text-purple-200">Decompresses Spine & Neck</span>
             </div>
           </motion.div>
         )}
@@ -425,23 +436,23 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="pt-3 border-t border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs"
+            className="pt-3 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs"
           >
-            <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
-              <span className="text-[10px] font-bold text-emerald-900 block">Hybrid Structure</span>
-              <span className="font-extrabold text-emerald-950">50% Strength / 50% Cardio</span>
+            <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-800/60">
+              <span className="text-[10px] font-bold text-emerald-400 block">Hybrid Structure</span>
+              <span className="font-extrabold text-emerald-200">50% Strength / 50% Cardio</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200">
-              <span className="text-[10px] font-bold text-amber-900 block">Est. Calorie Burn</span>
-              <span className="font-extrabold text-amber-950">~380 - 450 kcal</span>
+            <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-800/60">
+              <span className="text-[10px] font-bold text-amber-400 block">Est. Calorie Burn</span>
+              <span className="font-extrabold text-amber-200">~380 - 450 kcal</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200">
-              <span className="text-[10px] font-bold text-blue-900 block">Heart Rate Target</span>
-              <span className="font-extrabold text-blue-950">Zone 3-4 (140-165 BPM)</span>
+            <div className="p-2.5 rounded-xl bg-blue-950/40 border border-blue-800/60">
+              <span className="text-[10px] font-bold text-blue-400 block">Heart Rate Target</span>
+              <span className="font-extrabold text-blue-200">Zone 3-4 (140-165 BPM)</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200">
-              <span className="text-[10px] font-bold text-purple-900 block">Cognitive Impact</span>
-              <span className="font-extrabold text-purple-950">Hippocampus BDNF Spike</span>
+            <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-800/60">
+              <span className="text-[10px] font-bold text-purple-400 block">Cognitive Impact</span>
+              <span className="font-extrabold text-purple-200">Hippocampus BDNF Spike</span>
             </div>
           </motion.div>
         )}
@@ -451,23 +462,23 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="pt-3 border-t border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs"
+            className="pt-3 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs"
           >
-            <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200">
-              <span className="text-[10px] font-bold text-blue-900 block">Gym Equipment</span>
-              <span className="font-extrabold text-blue-950">Olympic Barbells & Cables</span>
+            <div className="p-2.5 rounded-xl bg-blue-950/40 border border-blue-800/60">
+              <span className="text-[10px] font-bold text-blue-400 block">Gym Equipment</span>
+              <span className="font-extrabold text-blue-200">Olympic Barbells & Cables</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
-              <span className="text-[10px] font-bold text-emerald-900 block">Training Focus</span>
-              <span className="font-extrabold text-emerald-950">Hypertrophy & Strength</span>
+            <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-800/60">
+              <span className="text-[10px] font-bold text-emerald-400 block">Training Focus</span>
+              <span className="font-extrabold text-emerald-200">Hypertrophy & Strength</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200">
-              <span className="text-[10px] font-bold text-amber-900 block">Muscle Targeting</span>
-              <span className="font-extrabold text-amber-950">Biceps, Chest, Triceps, etc.</span>
+            <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-800/60">
+              <span className="text-[10px] font-bold text-amber-400 block">Muscle Targeting</span>
+              <span className="font-extrabold text-amber-200">Biceps, Chest, Triceps, etc.</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200">
-              <span className="text-[10px] font-bold text-purple-900 block">Safety & Posture</span>
-              <span className="font-extrabold text-purple-950">Scapular Lock & Joint Angles</span>
+            <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-800/60">
+              <span className="text-[10px] font-bold text-purple-400 block">Safety & Posture</span>
+              <span className="font-extrabold text-purple-200">Scapular Lock & Joint Angles</span>
             </div>
           </motion.div>
         )}
@@ -478,32 +489,32 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
         {/* Daily Steps Tile */}
         <motion.div
           whileHover={{ y: -2 }}
-          className="bg-white border border-slate-300 rounded-2xl p-4 shadow-sm space-y-2"
+          className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xs space-y-2"
         >
-          <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-300">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               Daily Steps
             </span>
-            <Footprints className="w-4 h-4 text-emerald-700" />
+            <Footprints className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-black text-slate-950">
+            <span className="text-2xl font-black text-white">
               {telemetry.stepsToday.toLocaleString()}
             </span>
-            <span className="text-xs font-extrabold text-emerald-800">
+            <span className="text-xs font-extrabold text-emerald-400">
               {stepProgress}% target
             </span>
           </div>
-          <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+          <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${stepProgress}%` }}
               transition={{ duration: 0.8 }}
-              className="bg-emerald-600 h-full rounded-full"
+              className="bg-emerald-500 h-full rounded-full"
             />
           </div>
-          <div className="text-xs font-semibold text-slate-700">
+          <div className="text-xs font-semibold text-slate-400">
             ~{Math.round(telemetry.stepsToday * 0.04)} kcal phone step burn
           </div>
         </motion.div>
@@ -511,24 +522,24 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
         {/* Sleep Duration Tile */}
         <motion.div
           whileHover={{ y: -2 }}
-          className="bg-white border border-slate-300 rounded-2xl p-4 shadow-sm space-y-2"
+          className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xs space-y-2"
         >
-          <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-300">
             <span>Sleep Recovery</span>
-            <Moon className="w-4 h-4 text-indigo-700" />
+            <Moon className="w-4 h-4 text-indigo-400" />
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-black text-slate-950">
+            <span className="text-2xl font-black text-white">
               {telemetry.sleepHours} hrs
             </span>
-            <span className={`text-xs font-extrabold ${telemetry.sleepHours < 6 ? 'text-amber-800' : 'text-emerald-800'}`}>
+            <span className={`text-xs font-extrabold ${telemetry.sleepHours < 6 ? 'text-amber-400' : 'text-emerald-400'}`}>
               {telemetry.sleepHours < 6 ? 'Sleep Deficit' : 'Optimal'}
             </span>
           </div>
-          <div className="text-xs font-semibold text-slate-700">
+          <div className="text-xs font-semibold text-slate-400">
             Screen-off estimate: {telemetry.screenOffEstimatedSleep}h
           </div>
-          <div className="text-[11px] font-medium text-slate-600">
+          <div className="text-[11px] font-medium text-slate-500">
             Auto-tunes workout CNS recovery
           </div>
         </motion.div>
@@ -536,24 +547,24 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
         {/* Walking Cadence Tile */}
         <motion.div
           whileHover={{ y: -2 }}
-          className="bg-white border border-slate-300 rounded-2xl p-4 shadow-sm space-y-2"
+          className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xs space-y-2"
         >
-          <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-300">
             <span>Campus Cadence</span>
-            <Zap className="w-4 h-4 text-blue-700" />
+            <Zap className="w-4 h-4 text-blue-400" />
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-black text-slate-950">
-              {telemetry.walkingCadenceRpm} <span className="text-xs font-bold text-slate-700">RPM</span>
+            <span className="text-2xl font-black text-white">
+              {telemetry.walkingCadenceRpm} <span className="text-xs font-bold text-slate-400">RPM</span>
             </span>
-            <span className="text-xs font-extrabold text-blue-800">
+            <span className="text-xs font-extrabold text-blue-400">
               {telemetry.walkingCadenceRpm > 100 ? 'Brisk Cadence' : 'Moderate'}
             </span>
           </div>
-          <div className="text-xs font-semibold text-slate-700">
+          <div className="text-xs font-semibold text-slate-400">
             {telemetry.campusStairsClimbed} stairs flights climbed today
           </div>
-          <div className="text-[11px] font-medium text-slate-600">
+          <div className="text-[11px] font-medium text-slate-500">
             Internal phone motion sensor
           </div>
         </motion.div>
@@ -562,59 +573,59 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
       {/* Routine Overview Card */}
       <motion.div
         whileHover={{ y: -2 }}
-        className="bg-white border border-slate-300 rounded-2xl p-6 shadow-sm space-y-5"
+        className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-md space-y-5"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
           <div>
-            <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-700 mb-1">
-              <span className="font-extrabold text-slate-950">{profile.name}</span>
-              <span>•</span>
-              <span className="flex items-center gap-1 font-bold text-slate-900">
-                <Clock className="w-3.5 h-3.5 text-emerald-700" />
+            <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-400 mb-1">
+              <span className="font-extrabold text-white">{profile.name}</span>
+              <span aria-hidden="true">·</span>
+              <span className="flex items-center gap-1 font-bold text-emerald-400">
+                <Clock className="w-3.5 h-3.5" />
                 {currentWorkout.durationMinutes} min
               </span>
-              <span>•</span>
-              <span className="font-bold text-slate-900">{currentWorkout.intensityLevel}</span>
+              <span aria-hidden="true">·</span>
+              <span className="font-bold text-slate-300">{currentWorkout.intensityLevel}</span>
               {trainingMode === 'hybrid' && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
-                  <Zap className="w-3 h-3 text-emerald-700" />
-                  Hybrid Athlete
-                </span>
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span className="text-emerald-400 font-bold">Hybrid Athlete</span>
+                </>
               )}
               {profile.medical?.jointBackIssues && profile.medical.jointBackIssues !== 'none' && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
-                  <ShieldCheck className="w-3 h-3 text-emerald-700" />
-                  Medical Safe
-                </span>
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span className="text-emerald-400 font-bold">Medical Safe</span>
+                </>
               )}
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
               {currentWorkout.title}
             </h2>
           </div>
 
           {/* Progress Indicator */}
           <div className="sm:text-right">
-            <div className="text-xs font-extrabold text-slate-950">
+            <div className="text-xs font-extrabold text-white">
               {completedCount} of {totalExercises} completed
             </div>
-            <div className="w-40 bg-slate-200 h-2.5 rounded-full overflow-hidden mt-1.5">
+            <div className="w-40 bg-slate-950 h-2.5 rounded-full overflow-hidden mt-1.5 border border-slate-800">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercent}%` }}
                 transition={{ duration: 0.4 }}
-                className="bg-emerald-600 h-full rounded-full"
+                className="bg-emerald-500 h-full rounded-full"
               />
             </div>
           </div>
         </div>
 
         {/* EXERCISE LEVEL & BODY PART TARGETING FILTER BAR */}
-        <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+        <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
           {/* Level Filter: Easy, Moderate, Intense */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900">
-              <Filter className="w-3.5 h-3.5 text-emerald-700" />
+            <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-300">
+              <Filter className="w-3.5 h-3.5 text-emerald-400" />
               <span>Exercise Level:</span>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
@@ -630,8 +641,8 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
                   onClick={() => setSelectedLevel(lvl.id as ExerciseLevelFilter)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                     selectedLevel === lvl.id
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-white text-slate-700 hover:text-slate-950 border border-slate-300'
+                      ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                      : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                   }`}
                 >
                   {lvl.label}
@@ -641,9 +652,9 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
           </div>
 
           {/* Body Part Targeting: Biceps, Chest, Triceps, Back, Shoulders, Legs, Core */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-200">
-            <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900">
-              <Target className="w-3.5 h-3.5 text-blue-700" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-800">
+            <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-300">
+              <Target className="w-3.5 h-3.5 text-blue-400" />
               <span>Target Body Part:</span>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
@@ -663,8 +674,8 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
                   onClick={() => setSelectedBodyPart(bp.id as BodyPartTarget)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer capitalize ${
                     selectedBodyPart === bp.id
-                      ? 'bg-blue-700 text-white shadow-xs'
-                      : 'bg-white text-slate-700 hover:text-slate-950 border border-slate-300'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                   }`}
                 >
                   {bp.label}
@@ -675,7 +686,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
 
           {/* Active Filter Summary and Clear */}
           {(selectedLevel !== 'all' || selectedBodyPart !== 'all') && (
-            <div className="flex items-center justify-between text-xs text-slate-700 pt-1 font-medium">
+            <div className="flex items-center justify-between text-xs text-slate-400 pt-1 font-medium">
               <span>
                 Showing {filteredExercises.length} of {currentWorkoutBase.exercises.length} exercises matching filters.
               </span>
@@ -685,7 +696,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
                   setSelectedLevel('all');
                   setSelectedBodyPart('all');
                 }}
-                className="text-xs font-bold text-emerald-800 hover:underline cursor-pointer"
+                className="text-xs font-bold text-emerald-400 hover:underline cursor-pointer"
               >
                 Clear Filters
               </button>
@@ -695,8 +706,8 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
 
         {/* Empty filter message */}
         {currentWorkout.exercises.length === 0 && (
-          <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-300 rounded-xl space-y-2">
-            <p className="text-sm font-bold text-slate-800">
+          <div className="p-8 text-center bg-slate-950 border border-dashed border-slate-800 rounded-2xl space-y-2">
+            <p className="text-sm font-bold text-slate-300">
               No exercises match the selected level & body part combination.
             </p>
             <button
@@ -705,7 +716,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
                 setSelectedLevel('all');
                 setSelectedBodyPart('all');
               }}
-              className="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg cursor-pointer hover:bg-slate-800"
+              className="px-3 py-1.5 bg-emerald-500 text-slate-950 text-xs font-bold rounded-xl cursor-pointer hover:bg-emerald-400"
             >
               Reset Filters to View All Exercises
             </button>
@@ -721,18 +732,18 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
                 key={ex.name}
                 whileHover={{ y: -2 }}
                 onClick={() => toggleExercise(ex.name)}
-                className={`p-4 rounded-xl border transition cursor-pointer flex items-start gap-3.5 ${
+                className={`p-4 rounded-2xl border transition cursor-pointer flex items-start gap-3.5 ${
                   isDone 
-                    ? 'bg-slate-50 border-slate-300 opacity-75' 
-                    : 'bg-white border-slate-300 hover:border-emerald-600 shadow-xs'
+                    ? 'bg-slate-950/40 border-slate-800/60 opacity-60' 
+                    : 'bg-slate-950/80 border-slate-800 hover:border-slate-700 shadow-xs'
                 }`}
               >
                 <button
                   type="button"
                   className={`mt-0.5 w-5 h-5 rounded-lg border flex items-center justify-center transition shrink-0 ${
                     isDone
-                      ? 'bg-emerald-700 border-emerald-700 text-white'
-                      : 'border-slate-400 bg-white'
+                      ? 'bg-emerald-500 border-emerald-500 text-slate-950'
+                      : 'border-slate-700 bg-slate-900'
                   }`}
                   aria-label={`Mark ${ex.name} as done`}
                 >
@@ -741,10 +752,10 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
 
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`text-sm sm:text-base font-extrabold ${isDone ? 'line-through text-slate-500' : 'text-slate-950'}`}>
+                    <span className={`text-sm sm:text-base font-extrabold ${isDone ? 'line-through text-slate-500' : 'text-white'}`}>
                       {index + 1}. {ex.name}
                     </span>
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-950 border border-slate-300">
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-200 border border-slate-700">
                       {ex.sets} sets • {ex.repsOrDuration}
                     </span>
 
@@ -752,10 +763,10 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
                     {ex.level && (
                       <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border uppercase tracking-wider ${
                         ex.level === 'intense'
-                          ? 'bg-rose-100 text-rose-950 border-rose-300'
+                          ? 'bg-rose-950/80 text-rose-300 border-rose-800'
                           : ex.level === 'moderate'
-                            ? 'bg-amber-100 text-amber-950 border-amber-300'
-                            : 'bg-emerald-100 text-emerald-950 border-emerald-300'
+                            ? 'bg-amber-950/80 text-amber-300 border-amber-800'
+                            : 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
                       }`}>
                         {ex.level}
                       </span>
@@ -763,24 +774,24 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
 
                     {/* Target Body Part Badge */}
                     {ex.bodyPart && (
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-blue-100 text-blue-950 border border-blue-300 uppercase tracking-wider">
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-blue-950/80 text-blue-300 border border-blue-800 uppercase tracking-wider">
                         {ex.bodyPart}
                       </span>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-800 font-medium mt-1.5">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400 font-medium mt-1.5">
                     <span>
-                      <strong className="font-extrabold text-slate-950">Equip:</strong> {ex.dormEquipmentNeeded}
+                      <strong className="font-extrabold text-slate-200">Equip:</strong> {ex.dormEquipmentNeeded}
                     </span>
                     <span>
-                      <strong className="font-extrabold text-slate-950">Cue:</strong> {ex.postureFocus}
+                      <strong className="font-extrabold text-slate-200">Cue:</strong> {ex.postureFocus}
                     </span>
                   </div>
 
                   {ex.medicalSafetyNote && (
-                    <div className="text-xs text-emerald-900 mt-1.5 flex items-center gap-1 font-bold">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                    <div className="text-xs text-emerald-400 mt-1.5 flex items-center gap-1 font-bold">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                       <span>{ex.medicalSafetyNote}</span>
                     </div>
                   )}
@@ -795,7 +806,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
                       const guide = getExerciseGuideByName(ex.name);
                       setActiveSessionExercise(guide);
                     }}
-                    className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white flex items-center gap-1 cursor-pointer shadow-xs"
+                    className="px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 flex items-center gap-1 cursor-pointer shadow-xs"
                     title="Start active session with exercise timer, rest reminder chime, and posture safety checklist"
                   >
                     <Play className="w-3.5 h-3.5 fill-current" />
@@ -810,10 +821,10 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
                       setSelectedGuide(guide);
                       setIsGuideModalOpen(true);
                     }}
-                    className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/80 border border-emerald-300 dark:border-emerald-700 text-xs font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1 cursor-pointer shadow-2xs"
+                    className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-emerald-400 flex items-center gap-1 cursor-pointer shadow-2xs"
                     title="View detailed step-by-step exercise instructions"
                   >
-                    <BookOpen className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
+                    <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Guide</span>
                   </button>
 
@@ -823,10 +834,10 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
                       e.stopPropagation();
                       handleStartRestTimer(trainingMode === 'hybrid' ? 30 : 45);
                     }}
-                    className="px-2.5 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-xs font-bold text-slate-900 flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs"
+                    className="px-2.5 py-1.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs"
                     title="Start quick rest interval timer"
                   >
-                    <Timer className="w-3.5 h-3.5 text-emerald-700" />
+                    <Timer className="w-3.5 h-3.5 text-emerald-400" />
                     <span>{trainingMode === 'hybrid' ? '30s Interval' : '45s Rest'}</span>
                   </button>
                 </div>
@@ -835,24 +846,24 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
           })}
         </div>
 
-        {/* Live Rest Timer Pill if Active */}
+        {/* Live Rest Timer Banner if Active */}
         <AnimatePresence>
           {activeTimerSeconds !== null && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center justify-between"
+              className="p-3.5 rounded-2xl bg-emerald-950/80 border border-emerald-700/80 flex items-center justify-between"
             >
               <div className="flex items-center gap-2.5">
-                <Timer className="w-5 h-5 text-emerald-800 animate-spin" />
-                <span className="text-xs sm:text-sm font-extrabold text-emerald-950">
+                <Timer className="w-5 h-5 text-emerald-400 animate-spin" />
+                <span className="text-xs sm:text-sm font-extrabold text-emerald-200">
                   Cadence / Rest Interval: {activeTimerSeconds}s remaining
                 </span>
               </div>
               <button
                 onClick={() => setActiveTimerSeconds(null)}
-                className="text-xs text-emerald-900 font-bold cursor-pointer hover:underline"
+                className="text-xs text-emerald-400 font-bold cursor-pointer hover:underline"
               >
                 Skip Interval
               </button>
@@ -861,11 +872,11 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
         </AnimatePresence>
 
         {/* Action Controls */}
-        <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
+        <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
           <button
             type="button"
             onClick={handleResetChecklist}
-            className="text-xs font-bold text-slate-800 hover:text-slate-950 transition flex items-center gap-1.5 cursor-pointer"
+            className="text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-1.5 cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Reset Checklist
@@ -875,9 +886,9 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
             <motion.div 
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
-              className="flex items-center gap-2 text-xs font-extrabold text-emerald-900 bg-emerald-100 px-4 py-2 rounded-xl border border-emerald-300"
+              className="flex items-center gap-2 text-xs font-extrabold text-emerald-300 bg-emerald-950/80 px-4 py-2 rounded-2xl border border-emerald-800"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
               Workout saved to your profile
             </motion.div>
           ) : (
@@ -887,10 +898,10 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
               type="button"
               onClick={handleFinishWorkout}
               disabled={completedCount === 0}
-              className={`px-5 py-2.5 text-xs font-bold rounded-xl transition cursor-pointer shadow-xs ${
+              className={`px-5 py-2.5 text-xs font-bold rounded-2xl transition cursor-pointer shadow-xs ${
                 completedCount > 0
-                  ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
-                  : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                  ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20'
+                  : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
               }`}
             >
               Complete Workout ({completedCount}/{totalExercises})
@@ -903,33 +914,33 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
       {hasMedicalNotes && (
         <motion.div 
           whileHover={{ y: -2 }}
-          className="bg-white border border-slate-300 rounded-2xl p-5 shadow-sm space-y-3"
+          className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-md space-y-3"
         >
           <button
             onClick={() => setShowMedicalNotes(!showMedicalNotes)}
             className="w-full flex items-center justify-between text-left cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <HeartPulse className="w-4 h-4 text-emerald-700" />
-              <h4 className="text-sm font-extrabold text-slate-950">
+              <HeartPulse className="w-4 h-4 text-emerald-400" />
+              <h4 className="text-sm font-extrabold text-white">
                 Medical & Physical Safety Rules Applied
               </h4>
             </div>
-            <span className="text-xs font-bold text-slate-800 hover:text-slate-950">
+            <span className="text-xs font-bold text-slate-400 hover:text-white">
               {showMedicalNotes ? 'Hide details' : 'View details'}
             </span>
           </button>
 
           {showMedicalNotes && (
-            <div className="pt-2 border-t border-slate-200 space-y-2 text-xs text-slate-900">
+            <div className="pt-2 border-t border-slate-800 space-y-2 text-xs text-slate-300">
               {profile.medical?.medicalPrecautions.map((precaution, idx) => (
-                <div key={idx} className="flex items-start gap-2 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 text-emerald-950 font-medium">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0 mt-0.5" />
+                <div key={idx} className="flex items-start gap-2 bg-slate-950/80 p-2.5 rounded-2xl border border-slate-800 text-emerald-300 font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
                   <span>{precaution}</span>
                 </div>
               ))}
               {currentWorkout.medicalClearanceNotes && (
-                <p className="text-slate-800 italic mt-1 font-medium">
+                <p className="text-slate-400 italic mt-1 font-medium">
                   Physiology notes: {currentWorkout.medicalClearanceNotes}
                 </p>
               )}
@@ -941,38 +952,38 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
       {/* Routine Logic & Rationale */}
       <motion.div 
         whileHover={{ y: -2 }}
-        className="bg-white border border-slate-300 rounded-2xl p-5 shadow-sm"
+        className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-md"
       >
         <button
           onClick={() => setShowExplanation(!showExplanation)}
           className="w-full flex items-center justify-between text-left cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <Info className="w-4 h-4 text-slate-700" />
-            <h4 className="text-sm font-extrabold text-slate-950">
+            <Info className="w-4 h-4 text-slate-400" />
+            <h4 className="text-sm font-extrabold text-white">
               Why this routine was selected ({trainingMode.toUpperCase()} Protocol)
             </h4>
           </div>
-          <span className="text-xs font-bold text-slate-800 hover:text-slate-950">
+          <span className="text-xs font-bold text-slate-400 hover:text-white">
             {showExplanation ? 'Hide rationale' : 'View rationale'}
           </span>
         </button>
 
         {showExplanation && (
-          <div className="mt-3 pt-3 border-t border-slate-200 text-xs text-slate-900 space-y-2 leading-relaxed font-medium">
+          <div className="mt-3 pt-3 border-t border-slate-800 text-xs text-slate-300 space-y-2 leading-relaxed font-medium">
             <p>{currentWorkout.examFriendlyNotes}</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                <span className="text-[10px] uppercase font-bold text-slate-700 block">Deadline Countdown</span>
-                <span className="text-xs font-bold text-slate-950">{profile.daysUntilExam} days</span>
+              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Deadline Countdown</span>
+                <span className="text-xs font-bold text-white">{profile.daysUntilExam} days</span>
               </div>
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                <span className="text-[10px] uppercase font-bold text-slate-700 block">Sleep Tracked</span>
-                <span className="text-xs font-bold text-slate-950">{telemetry.sleepHours}h last night</span>
+              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Sleep Tracked</span>
+                <span className="text-xs font-bold text-white">{telemetry.sleepHours}h last night</span>
               </div>
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                <span className="text-[10px] uppercase font-bold text-slate-700 block">Step Baseline</span>
-                <span className="text-xs font-bold text-slate-950">{telemetry.stepsToday.toLocaleString()} steps</span>
+              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Step Baseline</span>
+                <span className="text-xs font-bold text-white">{telemetry.stepsToday.toLocaleString()} steps</span>
               </div>
             </div>
           </div>

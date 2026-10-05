@@ -17,7 +17,8 @@ import {
   Smartphone,
   Award,
   Layers,
-  FileText
+  FileText,
+  Compass
 } from 'lucide-react';
 import { ThemeConfig } from '../theme';
 import { ActiveNavTab } from './Header';
@@ -100,12 +101,12 @@ export const PresentationGuideModal: React.FC<PresentationGuideModalProps> = ({
     },
     {
       step: 6,
-      title: 'Show Sub-₹120 Dorm Nutrition Plan',
-      description: 'Demonstrate budget-friendly recipes cookable strictly using only a kettle or microwave with no stove.',
-      tabTarget: 'diet' as ActiveNavTab,
-      action: () => onNavigateTab('diet'),
-      actionLabel: 'Open Dorm Meals',
-      icon: Utensils,
+      title: 'Google Maps Device Location & Travel Tracker',
+      description: 'Track distance traveled using Google Maps data and review recent device visit waypoints plotted on the interactive map.',
+      tabTarget: 'map' as ActiveNavTab,
+      action: () => onNavigateTab('map'),
+      actionLabel: 'Open Map Tracker',
+      icon: Compass,
       color: 'emerald',
     },
     {
@@ -130,6 +131,18 @@ export const PresentationGuideModal: React.FC<PresentationGuideModalProps> = ({
       actionLabel: 'Open Health Sync',
       icon: Smartphone,
       color: 'slate',
+    },
+    {
+      step: 9,
+      title: 'Direct SQLite Database & Schema Manager',
+      description: 'Showcase the ACID-compliant SQLite relational database (data/fitpath.db) and dedicated live structure manager HTML interface for altering columns and tables.',
+      tabTarget: 'profile' as ActiveNavTab,
+      action: () => {
+        window.open('/database-manager.html', '_blank');
+      },
+      actionLabel: 'Launch DB Manager HTML',
+      icon: Layers,
+      color: 'emerald',
     },
   ];
 

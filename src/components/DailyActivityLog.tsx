@@ -31,6 +31,7 @@ import {
   DailyLogState, 
   IndividualProfile 
 } from '../types';
+import { HealthRadarTracker } from './HealthRadarTracker';
 
 interface DailyActivityLogProps {
   theme: ThemeConfig;
@@ -86,21 +87,33 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
     setTimeout(() => setSaveToast(null), 3000);
   };
 
-  // Calculations
-  const totalCaloriesConsumed = dailyLog.items.reduce((sum, item) => sum + (item.calories || 0), 0);
-  const totalProteinGrams = dailyLog.items.reduce((sum, item) => sum + (item.proteinGrams || 0), 0);
-  const totalCarbsGrams = dailyLog.items.reduce((sum, item) => sum + (item.carbsGrams || 0), 0);
-  const totalFatGrams = dailyLog.items.reduce((sum, item) => sum + (item.fatGrams || 0), 0);
+  // Safe Accessors
+  const items = Array.isArray(dailyLog?.items) ? dailyLog.items : [];
+  const workouts = Array.isArray(dailyLog?.workouts) ? dailyLog.workouts : [];
+  const waterGlasses = typeof dailyLog?.waterGlasses === 'number' ? dailyLog.waterGlasses : 0;
+  const dailySteps = typeof dailyLog?.dailySteps === 'number' ? dailyLog.dailySteps : 0;
+  const dailyDetails = dailyLog?.dailyDetails || {
+    energyLevel: 3,
+    sleepHours: 7.0,
+    stressLevel: 'Low',
+    notes: '',
+  };
 
-  const workoutCaloriesBurned = dailyLog.workouts.reduce((sum, w) => sum + (w.burnedCalories || 0), 0);
-  const stepsCaloriesBurned = Math.round(dailyLog.dailySteps * 0.04);
+  // Calculations
+  const totalCaloriesConsumed = items.reduce((sum, item) => sum + (item.calories || 0), 0);
+  const totalProteinGrams = items.reduce((sum, item) => sum + (item.proteinGrams || 0), 0);
+  const totalCarbsGrams = items.reduce((sum, item) => sum + (item.carbsGrams || 0), 0);
+  const totalFatGrams = items.reduce((sum, item) => sum + (item.fatGrams || 0), 0);
+
+  const workoutCaloriesBurned = workouts.reduce((sum, w) => sum + (w.burnedCalories || 0), 0);
+  const stepsCaloriesBurned = Math.round(dailySteps * 0.04);
   const totalBurned = workoutCaloriesBurned + stepsCaloriesBurned;
 
-  const targetCalories = dailyLog.targetCalories || 2200;
+  const targetCalories = dailyLog?.targetCalories || 2200;
   const netCalories = totalCaloriesConsumed - totalBurned;
   const remainingCalories = targetCalories - totalCaloriesConsumed;
 
-  const totalWorkoutMinutes = dailyLog.workouts.reduce((sum, w) => sum + (w.durationMinutes || 0), 0);
+  const totalWorkoutMinutes = workouts.reduce((sum, w) => sum + (w.durationMinutes || 0), 0);
 
   // Handlers for Food
   const handleAddFoodItem = (e: React.FormEvent) => {
@@ -120,7 +133,9 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
 
     const updated: DailyLogState = {
       ...dailyLog,
-      items: [newItem, ...dailyLog.items],
+      items: [newItem, ...items],
+      workouts,
+      dailyDetails,
     };
 
     onUpdateDailyLog(updated);
@@ -143,7 +158,9 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
 
     const updated: DailyLogState = {
       ...dailyLog,
-      items: [newItem, ...dailyLog.items],
+      items: [newItem, ...items],
+      workouts,
+      dailyDetails,
     };
 
     onUpdateDailyLog(updated);
@@ -153,7 +170,9 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
   const handleDeleteFoodItem = (id: string) => {
     const updated: DailyLogState = {
       ...dailyLog,
-      items: dailyLog.items.filter((item) => item.id !== id),
+      items: items.filter((item) => item.id !== id),
+      workouts,
+      dailyDetails,
     };
     onUpdateDailyLog(updated);
     triggerToast('Item removed from food log');
@@ -179,8 +198,10 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
 
     const updated: DailyLogState = {
       ...dailyLog,
-      workouts: [newWorkout, ...dailyLog.workouts],
-      activeBurnCalories: (dailyLog.activeBurnCalories || 0) + newWorkout.burnedCalories,
+      items,
+      workouts: [newWorkout, ...workouts],
+      activeBurnCalories: (dailyLog?.activeBurnCalories || 0) + newWorkout.burnedCalories,
+      dailyDetails,
     };
 
     onUpdateDailyLog(updated);
@@ -189,11 +210,13 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
   };
 
   const handleDeleteWorkout = (id: string) => {
-    const workoutToDelete = dailyLog.workouts.find((w) => w.id === id);
+    const workoutToDelete = workouts.find((w) => w.id === id);
     const updated: DailyLogState = {
       ...dailyLog,
-      workouts: dailyLog.workouts.filter((w) => w.id !== id),
-      activeBurnCalories: Math.max(0, (dailyLog.activeBurnCalories || 0) - (workoutToDelete?.burnedCalories || 0)),
+      items,
+      workouts: workouts.filter((w) => w.id !== id),
+      activeBurnCalories: Math.max(0, (dailyLog?.activeBurnCalories || 0) - (workoutToDelete?.burnedCalories || 0)),
+      dailyDetails,
     };
     onUpdateDailyLog(updated);
     triggerToast('Workout removed from history');
@@ -201,9 +224,12 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
 
   // Water handler
   const handleUpdateWater = (delta: number) => {
-    const newGlasses = Math.max(0, dailyLog.waterGlasses + delta);
+    const newGlasses = Math.max(0, waterGlasses + delta);
     const updated: DailyLogState = {
       ...dailyLog,
+      items,
+      workouts,
+      dailyDetails,
       waterGlasses: newGlasses,
     };
     onUpdateDailyLog(updated);
@@ -211,9 +237,12 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
 
   // Steps handler
   const handleAddSteps = (stepIncrement: number) => {
-    const newSteps = dailyLog.dailySteps + stepIncrement;
+    const newSteps = dailySteps + stepIncrement;
     const updated: DailyLogState = {
       ...dailyLog,
+      items,
+      workouts,
+      dailyDetails,
       dailySteps: newSteps,
     };
     onUpdateDailyLog(updated);
@@ -224,8 +253,10 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
   const handleUpdateDailyDetails = (key: keyof DailyLogState['dailyDetails'], value: any) => {
     const updated: DailyLogState = {
       ...dailyLog,
+      items,
+      workouts,
       dailyDetails: {
-        ...dailyLog.dailyDetails,
+        ...dailyDetails,
         [key]: value,
       },
     };
@@ -257,8 +288,8 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
   };
 
   const filteredItems = mealFilter === 'All' 
-    ? dailyLog.items 
-    : dailyLog.items.filter((item) => item.mealType === mealFilter);
+    ? items 
+    : items.filter((item) => item.mealType === mealFilter);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -278,35 +309,35 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
       </AnimatePresence>
 
       {/* Top Banner & Control Bar */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+            <span className="p-2 rounded-xl bg-emerald-950/80 text-emerald-400">
               <ClipboardCheck className="w-5 h-5" />
             </span>
             <div>
-              <h2 className="text-xl font-black text-slate-950 dark:text-white tracking-tight">
+              <h2 className="text-xl font-black text-white tracking-tight">
                 Daily Activity & Diet Log
               </h2>
-              <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+              <p className="text-xs text-slate-300 font-medium">
                 Real-time tracking that starts from zero and auto-saves your progress
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 mt-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
+          <div className="flex items-center gap-3 mt-2 text-xs font-semibold text-slate-300">
             <span className="flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-slate-500" />
               {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span className="text-emerald-700 dark:text-emerald-400 font-bold">Auto-Saved to Cloud & Storage</span>
+            <span className="text-emerald-400 font-bold">Auto-Saved to Cloud & Storage</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setShowResetConfirm(true)}
-            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-3 py-2 rounded-xl border border-slate-800 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
             title="Reset today's values back to zero"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -334,7 +365,7 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
                 </h3>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                This will reset today's logged food items ({dailyLog.items.length}), recorded workouts ({dailyLog.workouts.length}), steps ({dailyLog.dailySteps}), and water back to zero so you can start clean.
+                This will reset today's logged food items ({items.length}), recorded workouts ({workouts.length}), steps ({dailySteps}), and water back to zero so you can start clean.
               </p>
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
@@ -355,56 +386,64 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
         )}
       </AnimatePresence>
 
+      {/* Health Radar & Activity Tracker (User requested: Add radar and activity tracker in activity and diet tab) */}
+      <HealthRadarTracker 
+        theme={theme} 
+        profile={profile} 
+        dailyLog={dailyLog} 
+        totalDistanceKm={profile?.deviceLocation?.totalDistanceKm || 3.4} 
+      />
+
       {/* 4 CORE METRIC CARDS (STARTS FROM ZERO) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1: Calories Consumed */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-2">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Flame className="w-4 h-4 text-orange-500" />
+            <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <Flame className="w-4 h-4 text-orange-400" />
               Calories Consumed
             </span>
-            <span className="text-[11px] font-semibold text-slate-500">Target: {targetCalories}</span>
+            <span className="text-[11px] font-semibold text-slate-400">Target: {targetCalories}</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-950 dark:text-white tracking-tight">
+            <span className="text-2xl font-black text-white tracking-tight">
               {totalCaloriesConsumed.toLocaleString()}
             </span>
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">kcal</span>
+            <span className="text-xs font-bold text-slate-400">kcal</span>
           </div>
           {/* Progress Bar */}
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+          <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
             <div 
               className="bg-orange-500 h-full rounded-full transition-all duration-500"
               style={{ width: `${Math.min(100, Math.round((totalCaloriesConsumed / targetCalories) * 100))}%` }}
             />
           </div>
-          <div className="flex justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+          <div className="flex justify-between text-[11px] font-semibold text-slate-400">
             <span>{Math.round((totalCaloriesConsumed / targetCalories) * 100)}% of goal</span>
             <span>{remainingCalories >= 0 ? `${remainingCalories} kcal left` : `${Math.abs(remainingCalories)} kcal surplus`}</span>
           </div>
         </div>
 
         {/* Metric 2: Workouts Completed */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-2">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Dumbbell className="w-4 h-4 text-emerald-500" />
+            <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <Dumbbell className="w-4 h-4 text-emerald-400" />
               Workouts Done
             </span>
-            <span className="text-[11px] font-semibold text-slate-500">{totalWorkoutMinutes} mins total</span>
+            <span className="text-[11px] font-semibold text-slate-400">{totalWorkoutMinutes} mins total</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-950 dark:text-white tracking-tight">
-              {dailyLog.workouts.length}
+            <span className="text-2xl font-black text-white tracking-tight">
+              {workouts.length}
             </span>
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">sessions</span>
+            <span className="text-xs font-bold text-slate-400">sessions</span>
           </div>
-          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-400 pt-1">
+          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 pt-1">
             <span>Burned ~{workoutCaloriesBurned} kcal</span>
             <button 
               onClick={onOpenWorkoutTab}
-              className="text-emerald-600 dark:text-emerald-400 hover:underline font-bold"
+              className="text-emerald-400 hover:text-emerald-300 hover:underline font-bold cursor-pointer"
             >
               Start Workout →
             </button>
@@ -412,26 +451,26 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
         </div>
 
         {/* Metric 3: Water Tracker */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-2">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Droplet className="w-4 h-4 text-sky-500" />
+            <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <Droplet className="w-4 h-4 text-sky-400" />
               Water Hydration
             </span>
-            <span className="text-[11px] font-semibold text-slate-500">{dailyLog.waterGlasses * 250} ml</span>
+            <span className="text-[11px] font-semibold text-slate-400">{waterGlasses * 250} ml</span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-black text-slate-950 dark:text-white tracking-tight">
-                {dailyLog.waterGlasses}
+              <span className="text-2xl font-black text-white tracking-tight">
+                {waterGlasses}
               </span>
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">/ 8 glasses</span>
+              <span className="text-xs font-bold text-slate-400">/ 8 glasses</span>
             </div>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => handleUpdateWater(-1)}
-                disabled={dailyLog.waterGlasses <= 0}
-                className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold text-sm disabled:opacity-30 cursor-pointer"
+                disabled={waterGlasses <= 0}
+                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 font-bold text-sm disabled:opacity-30 cursor-pointer"
               >
                 -
               </button>
@@ -448,7 +487,7 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
               <div 
                 key={i} 
                 className={`flex-1 h-2 rounded-full transition-all ${
-                  i < dailyLog.waterGlasses ? 'bg-sky-500' : 'bg-slate-100 dark:bg-slate-800'
+                  i < waterGlasses ? 'bg-sky-500' : 'bg-slate-800'
                 }`}
               />
             ))}
@@ -456,36 +495,36 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
         </div>
 
         {/* Metric 4: Daily Steps */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-2">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Footprints className="w-4 h-4 text-emerald-600" />
+            <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <Footprints className="w-4 h-4 text-emerald-400" />
               Campus & Room Steps
             </span>
-            <span className="text-[11px] font-semibold text-slate-500">Goal: 8,000</span>
+            <span className="text-[11px] font-semibold text-slate-400">Goal: 8,000</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-950 dark:text-white tracking-tight">
-              {dailyLog.dailySteps.toLocaleString()}
+            <span className="text-2xl font-black text-white tracking-tight">
+              {dailySteps.toLocaleString()}
             </span>
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">steps</span>
+            <span className="text-xs font-bold text-slate-400">steps</span>
           </div>
           <div className="flex items-center gap-1.5 pt-1">
             <button
               onClick={() => handleAddSteps(500)}
-              className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[11px] font-bold text-slate-800 dark:text-slate-200"
+              className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-bold text-slate-200 cursor-pointer"
             >
               +500
             </button>
             <button
               onClick={() => handleAddSteps(1000)}
-              className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[11px] font-bold text-slate-800 dark:text-slate-200"
+              className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-bold text-slate-200 cursor-pointer"
             >
               +1,000
             </button>
             <button
               onClick={() => handleAddSteps(2000)}
-              className="px-2 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold"
+              className="px-2 py-1 rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-800/80 text-[11px] font-bold cursor-pointer"
             >
               +2,000
             </button>
@@ -494,14 +533,14 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
       </div>
 
       {/* Sub-Navigation Filter Tabs */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveSubTab('all')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
               activeSubTab === 'all'
-                ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
             }`}
           >
             All Activity
@@ -510,30 +549,30 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
             onClick={() => setActiveSubTab('diet')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
               activeSubTab === 'diet'
-                ? 'bg-orange-600 text-white'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                ? 'bg-orange-600 text-white shadow-xs'
+                : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
             }`}
           >
             <Utensils className="w-3.5 h-3.5" />
-            Diet Log ({dailyLog.items.length})
+            Diet Log ({items.length})
           </button>
           <button
             onClick={() => setActiveSubTab('workouts')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
               activeSubTab === 'workouts'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
             }`}
           >
             <Dumbbell className="w-3.5 h-3.5" />
-            Workouts Log ({dailyLog.workouts.length})
+            Workouts Log ({workouts.length})
           </button>
           <button
             onClick={() => setActiveSubTab('notes')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
               activeSubTab === 'notes'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
@@ -696,7 +735,7 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
                   Exercise Sessions Logged Today
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
-                  {dailyLog.workouts.length} recorded session(s) • ~{workoutCaloriesBurned} total calories burned
+                  {workouts.length} recorded session(s) • ~{workoutCaloriesBurned} total calories burned
                 </p>
               </div>
             </div>
@@ -710,7 +749,7 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
             </button>
           </div>
 
-          {dailyLog.workouts.length === 0 ? (
+          {workouts.length === 0 ? (
             <div className="p-8 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
               <Dumbbell className="w-8 h-8 text-slate-300 mx-auto" />
               <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -728,7 +767,7 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
             </div>
           ) : (
             <div className="space-y-3">
-              {dailyLog.workouts.map((workout) => (
+              {workouts.map((workout) => (
                 <div 
                   key={workout.id}
                   className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
@@ -812,7 +851,7 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
                     key={level}
                     onClick={() => handleUpdateDailyDetails('energyLevel', level)}
                     className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
-                      dailyLog.dailyDetails.energyLevel === level
+                      dailyDetails.energyLevel === level
                         ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
                         : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                     }`}
@@ -834,7 +873,7 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
                   step="0.5"
                   min="0"
                   max="14"
-                  value={dailyLog.dailyDetails.sleepHours}
+                  value={dailyDetails.sleepHours}
                   onChange={(e) => handleUpdateDailyDetails('sleepHours', parseFloat(e.target.value) || 0)}
                   className="w-full px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white"
                 />
@@ -853,7 +892,7 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
                     key={lvl}
                     onClick={() => handleUpdateDailyDetails('stressLevel', lvl)}
                     className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
-                      dailyLog.dailyDetails.stressLevel === lvl
+                      dailyDetails.stressLevel === lvl
                         ? lvl === 'High' ? 'bg-rose-600 text-white border-rose-600' : 'bg-emerald-600 text-white border-emerald-600'
                         : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                     }`}
@@ -872,7 +911,7 @@ export const DailyActivityLog: React.FC<DailyActivityLogProps> = ({
             </label>
             <textarea
               rows={3}
-              value={dailyLog.dailyDetails.notes}
+              value={dailyDetails.notes}
               onChange={(e) => handleUpdateDailyDetails('notes', e.target.value)}
               placeholder="e.g. Completed zero-equipment pushup and squat workout before afternoon library session. Drank 6 glasses of water. Lower back felt relaxed."
               className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 leading-relaxed"

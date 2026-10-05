@@ -12,7 +12,8 @@ import {
   RotateCcw, 
   ArrowRight,
   Sparkles,
-  Layers
+  Layers,
+  Compass
 } from 'lucide-react';
 import { ThemeConfig } from '../theme';
 
@@ -92,12 +93,12 @@ export const SIHPrototypeModal: React.FC<SIHPrototypeModalProps> = ({
 
             <div className={`p-3.5 rounded-xl border ${theme.borderClass} ${theme.bgClass} flex items-start gap-3`}>
               <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-                <Utensils className="w-4 h-4" />
+                <Compass className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-slate-900 mb-0.5">3. Sub-₹120 Hostel Nutrition</h4>
+                <h4 className="text-xs font-bold text-slate-900 mb-0.5">3. Google Maps Travel & Nutrition</h4>
                 <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Engineers high-bioavailability protein meals cooked strictly using electric kettles and microwaves with zero stove requirement.
+                  Calculates travel distance with Google Maps Platform, plots device visits, and computes advanced clinical nutrition.
                 </p>
               </div>
             </div>

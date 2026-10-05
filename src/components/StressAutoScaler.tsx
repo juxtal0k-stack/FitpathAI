@@ -56,18 +56,18 @@ export const StressAutoScaler: React.FC<StressAutoScalerProps> = ({
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6 text-white">
       <div>
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+        <h2 className="text-xl font-bold text-white tracking-tight">
           Exam Stress Auto-Scaler
         </h2>
-        <p className="text-sm text-slate-500 mt-0.5">
+        <p className="text-sm text-slate-400 mt-0.5">
           Automatically scales workout duration and intensity according to upcoming exams and recovery data.
         </p>
       </div>
 
       {/* Interactive Sliders Form */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-5">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-md space-y-5">
         <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
           Current Conditions
         </h3>
@@ -75,9 +75,9 @@ export const StressAutoScaler: React.FC<StressAutoScalerProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {/* Days until exam */}
           <div>
-            <div className="flex items-center justify-between text-xs font-medium text-slate-700 mb-1.5">
+            <div className="flex items-center justify-between text-xs font-medium text-slate-300 mb-1.5">
               <label>Days Until Next Exam</label>
-              <span className="font-semibold text-slate-900">{days} days</span>
+              <span className="font-bold text-emerald-400">{days} days</span>
             </div>
             <input
               type="range"
@@ -85,9 +85,9 @@ export const StressAutoScaler: React.FC<StressAutoScalerProps> = ({
               max="21"
               value={days}
               onChange={(e) => setDays(parseInt(e.target.value))}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+              className="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-emerald-500 border border-slate-800"
             />
-            <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+            <div className="flex justify-between text-[11px] text-slate-500 mt-1">
               <span>Tomorrow (1d)</span>
               <span>Finals (7d)</span>
               <span>Off-season (21d)</span>
@@ -96,9 +96,9 @@ export const StressAutoScaler: React.FC<StressAutoScalerProps> = ({
 
           {/* Sleep hours */}
           <div>
-            <div className="flex items-center justify-between text-xs font-medium text-slate-700 mb-1.5">
+            <div className="flex items-center justify-between text-xs font-medium text-slate-300 mb-1.5">
               <label>Sleep Last Night</label>
-              <span className="font-semibold text-slate-900">{sleep} hours</span>
+              <span className="font-bold text-emerald-400">{sleep} hours</span>
             </div>
             <input
               type="range"
@@ -107,9 +107,9 @@ export const StressAutoScaler: React.FC<StressAutoScalerProps> = ({
               step="0.5"
               value={sleep}
               onChange={(e) => setSleep(parseFloat(e.target.value))}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+              className="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-emerald-500 border border-slate-800"
             />
-            <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+            <div className="flex justify-between text-[11px] text-slate-500 mt-1">
               <span>4h (All-nighter)</span>
               <span>6.5h</span>
               <span>9h (Rested)</span>
@@ -118,9 +118,9 @@ export const StressAutoScaler: React.FC<StressAutoScalerProps> = ({
 
           {/* Study Stress Level */}
           <div>
-            <div className="flex items-center justify-between text-xs font-medium text-slate-700 mb-1.5">
+            <div className="flex items-center justify-between text-xs font-medium text-slate-300 mb-1.5">
               <label>Study Stress Level</label>
-              <span className="font-semibold text-slate-900">{stressRPE}/10</span>
+              <span className="font-bold text-emerald-400">{stressRPE}/10</span>
             </div>
             <input
               type="range"
@@ -128,9 +128,9 @@ export const StressAutoScaler: React.FC<StressAutoScalerProps> = ({
               max="10"
               value={stressRPE}
               onChange={(e) => setStressRPE(parseInt(e.target.value))}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+              className="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-emerald-500 border border-slate-800"
             />
-            <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+            <div className="flex justify-between text-[11px] text-slate-500 mt-1">
               <span>Low (1)</span>
               <span>Moderate (5)</span>
               <span>Peak Finals (10)</span>
@@ -139,9 +139,9 @@ export const StressAutoScaler: React.FC<StressAutoScalerProps> = ({
 
           {/* Steps Today */}
           <div>
-            <div className="flex items-center justify-between text-xs font-medium text-slate-700 mb-1.5">
+            <div className="flex items-center justify-between text-xs font-medium text-slate-300 mb-1.5">
               <label>Phone Step Count</label>
-              <span className="font-semibold text-slate-900">{steps.toLocaleString()} steps</span>
+              <span className="font-bold text-emerald-400">{steps.toLocaleString()} steps</span>
             </div>
             <input
               type="range"
@@ -150,9 +150,9 @@ export const StressAutoScaler: React.FC<StressAutoScalerProps> = ({
               step="500"
               value={steps}
               onChange={(e) => setSteps(parseInt(e.target.value))}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+              className="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-emerald-500 border border-slate-800"
             />
-            <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+            <div className="flex justify-between text-[11px] text-slate-500 mt-1">
               <span>Library Sedentary</span>
               <span>Target (8k)</span>
               <span>Active</span>
@@ -160,16 +160,16 @@ export const StressAutoScaler: React.FC<StressAutoScalerProps> = ({
           </div>
         </div>
 
-        <hr className="border-slate-100" />
+        <hr className="border-slate-800" />
 
         {/* Calculated Result */}
-        <div className="rounded-xl border p-4 bg-slate-50 border-slate-200 space-y-4">
+        <div className="rounded-2xl border p-5 bg-slate-950 border-slate-800 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
                 Calculated Plan Recommendation
               </span>
-              <h4 className="text-base font-bold text-slate-900">
+              <h4 className="text-base font-bold text-white">
                 {isExamDeload
                   ? 'Exam Deload: 18-Minute Restorative Routine'
                   : 'Standard: 45-Minute Strength Routine'}
@@ -179,13 +179,13 @@ export const StressAutoScaler: React.FC<StressAutoScalerProps> = ({
             <div className="flex items-center gap-2">
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
                 isExamDeload
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-emerald-100 text-emerald-800'
+                  ? 'bg-amber-950/80 text-amber-300 border border-amber-800'
+                  : 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
               }`}>
                 Stress Index: {totalStressIndex}/100
               </span>
               {intensityReduction > 0 && (
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-200 text-slate-700">
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
                   -{intensityReduction}% Volume
                 </span>
               )}
@@ -193,32 +193,32 @@ export const StressAutoScaler: React.FC<StressAutoScalerProps> = ({
           </div>
 
           {/* Plain English Rationale */}
-          <div className="text-xs text-slate-600 space-y-1.5">
+          <div className="text-xs text-slate-300 space-y-1.5 leading-relaxed">
             {isExamDeload ? (
               <>
                 <p>
-                  <strong>Why volume is reduced:</strong> With exams {days} days away and {sleep}h of sleep, heavy resistance training elevates cortisol and impairs memory retention.
+                  <strong className="text-white">Why volume is reduced:</strong> With exams {days} days away and {sleep}h of sleep, heavy resistance training elevates cortisol and impairs memory retention.
                 </p>
                 <p>
-                  <strong>Target focus:</strong> Shorter 18-minute session focusing on posture relief (desk hunch, neck tension) without exhausting the central nervous system.
+                  <strong className="text-white">Target focus:</strong> Shorter 18-minute session focusing on posture relief (desk hunch, neck tension) without exhausting the central nervous system.
                 </p>
               </>
             ) : (
               <p>
-                <strong>Normal training conditions:</strong> Ample exam buffer ({days} days) and sufficient recovery allow for full progressive overload without burnout risk.
+                <strong className="text-white">Normal training conditions:</strong> Ample exam buffer ({days} days) and sufficient recovery allow for full progressive overload without burnout risk.
               </p>
             )}
           </div>
 
           {/* Apply Button */}
-          <div className="pt-2 flex items-center justify-between">
-            <span className="text-xs text-slate-500">
+          <div className="pt-2 flex items-center justify-between border-t border-slate-800/80">
+            <span className="text-xs text-slate-400">
               Applies this schedule to today's active routine.
             </span>
 
             <div className="flex items-center gap-2">
               {applied && (
-                <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                <span className="text-xs text-emerald-400 font-medium flex items-center gap-1">
                   <Check className="w-3.5 h-3.5" />
                   Plan applied
                 </span>
@@ -226,7 +226,7 @@ export const StressAutoScaler: React.FC<StressAutoScalerProps> = ({
               <button
                 type="button"
                 onClick={handleApply}
-                className="px-4 py-2 text-xs font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 transition cursor-pointer shadow-sm"
+                className="px-4 py-2 text-xs font-bold rounded-xl text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition cursor-pointer shadow-xs"
               >
                 Apply to Today's Workout
               </button>

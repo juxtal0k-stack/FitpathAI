@@ -47,6 +47,7 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({
   const [workoutFinished, setWorkoutFinished] = useState<boolean>(false);
   const [showWeeklyCheckin, setShowWeeklyCheckin] = useState<boolean>(false);
   const [weeklyEnergyRpe, setWeeklyEnergyRpe] = useState<number>(7);
+  const [feedbackSuccess, setFeedbackSuccess] = useState<string | null>(null);
 
   const toggleExercise = (name: string) => {
     setCompletedExercises((prev) => ({
@@ -273,13 +274,21 @@ export const MobileAppView: React.FC<MobileAppViewProps> = ({
             </div>
             <button
               onClick={() => {
-                alert(`Weekly adaptive feedback recorded! FitPath AI recalibrated next week's baseline with stress factor ${weeklyEnergyRpe}/10.`);
-                setShowWeeklyCheckin(false);
+                setFeedbackSuccess(`Weekly feedback recorded (${weeklyEnergyRpe}/10). Baseline recalibrated!`);
+                setTimeout(() => {
+                  setFeedbackSuccess(null);
+                  setShowWeeklyCheckin(false);
+                }, 2500);
               }}
               className="w-full py-2 rounded-lg text-xs font-bold bg-teal-500 text-slate-950 hover:bg-teal-400 transition cursor-pointer"
             >
               Submit Weekly Feedback
             </button>
+            {feedbackSuccess && (
+              <p className="text-xs text-emerald-400 font-bold text-center mt-2 animate-fadeIn">
+                ✓ {feedbackSuccess}
+              </p>
+            )}
           </div>
         )}
       </div>

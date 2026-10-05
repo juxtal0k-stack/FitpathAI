@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Flame, 
   User, 
@@ -11,9 +11,21 @@ import {
   AlertCircle,
   ShieldCheck,
   Calendar,
-  ArrowRight
+  ArrowRight,
+  Phone,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  MapPin,
+  Stethoscope,
+  Volume2,
+  Droplets,
+  Scale
 } from 'lucide-react';
 import { IndividualProfile, DormFacilities } from '../types';
+import { COUNTRIES_DATA, BLOOD_GROUPS, CountryInfo, StateInfo, CityInfo } from '../data/locationData';
+import { playDoctorAlertBuzzer } from '../utils/soundEffects';
 
 interface InitialSetupIntakeProps {
   onComplete: (profileData: any) => Promise<void>;
@@ -23,92 +35,233 @@ export const InitialSetupIntake: React.FC<InitialSetupIntakeProps> = ({ onComple
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Form State
-  const [name, setName] = useState('');
-  const [age, setAge] = useState<number>(21);
+  // 1. Name & Father's Name
+  const [name, setName] = useState('Aarav Sharma');
+  const [fatherName, setFatherName] = useState('Rajesh Sharma');
+
+  // 2. Age & DOB Calendar
+  const [dob, setDob] = useState('2003-05-14');
+  const [age, setAge] = useState<number>(() => {
+    const birthYear = new Date('2003-05-14').getFullYear();
+    return new Date().getFullYear() - birthYear;
+  });
+
+  const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setDob(val);
+    if (val) {
+      const birth = new Date(val);
+      const today = new Date();
+      let calculatedAge = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+        calculatedAge--;
+      }
+      if (!isNaN(calculatedAge) && calculatedAge > 0 && calculatedAge < 120) {
+        setAge(calculatedAge);
+      }
+    }
+  };
+
+  // 3. Phone & Country Code
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string>('IN');
+  const selectedCountry = useMemo(() => {
+    return COUNTRIES_DATA.find((c) => c.code === selectedCountryCode) || COUNTRIES_DATA[0];
+  }, [selectedCountryCode]);
+
+  const [phoneNumber, setPhoneNumber] = useState('9876543210');
+
+  // 4. Email & Password
+  const [email, setEmail] = useState('aarav.sharma@university.edu');
+  const [password, setPassword] = useState('FitPathSecure#2026');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // 5. Gender
   const [gender, setGender] = useState('Male');
+
+  // 6. Address Cascade (Country -> State -> City -> Nearby Address -> Postal Code)
+  const [selectedStateName, setSelectedStateName] = useState<string>(() => selectedCountry.states[0]?.name || '');
+  const statesForCountry = selectedCountry.states;
+
+  const selectedState = useMemo(() => {
+    return statesForCountry.find((s) => s.name === selectedStateName) || statesForCountry[0];
+  }, [statesForCountry, selectedStateName]);
+
+  const citiesForState = selectedState?.cities || [];
+  const [selectedCityName, setSelectedCityName] = useState<string>(() => citiesForState[0]?.name || '');
+
+  const selectedCity = useMemo(() => {
+    return citiesForState.find((c) => c.name === selectedCityName) || citiesForState[0];
+  }, [citiesForState, selectedCityName]);
+
+  const nearbyAddresses = selectedCity?.nearbyAddresses || [];
+  const [selectedAddressLine, setSelectedAddressLine] = useState<string>(() => nearbyAddresses[0]?.address || '12 Marine Drive, Nariman Point');
+  const [postalCode, setPostalCode] = useState<string>(() => nearbyAddresses[0]?.postalCode || selectedCity?.defaultPostalCode || '400021');
+
+  // When country changes, reset state, city, address
+  const handleCountryChange = (newCode: string) => {
+    setSelectedCountryCode(newCode);
+    const country = COUNTRIES_DATA.find((c) => c.code === newCode);
+    if (country && country.states.length > 0) {
+      const firstState = country.states[0];
+      setSelectedStateName(firstState.name);
+      if (firstState.cities.length > 0) {
+        const firstCity = firstState.cities[0];
+        setSelectedCityName(firstCity.name);
+        if (firstCity.nearbyAddresses.length > 0) {
+          setSelectedAddressLine(firstCity.nearbyAddresses[0].address);
+          setPostalCode(firstCity.nearbyAddresses[0].postalCode);
+        } else {
+          setSelectedAddressLine(firstCity.name);
+          setPostalCode(firstCity.defaultPostalCode);
+        }
+      }
+    }
+  };
+
+  const handleStateChange = (newStateName: string) => {
+    setSelectedStateName(newStateName);
+    const stateObj = statesForCountry.find((s) => s.name === newStateName);
+    if (stateObj && stateObj.cities.length > 0) {
+      const firstCity = stateObj.cities[0];
+      setSelectedCityName(firstCity.name);
+      if (firstCity.nearbyAddresses.length > 0) {
+        setSelectedAddressLine(firstCity.nearbyAddresses[0].address);
+        setPostalCode(firstCity.nearbyAddresses[0].postalCode);
+      } else {
+        setSelectedAddressLine(firstCity.name);
+        setPostalCode(firstCity.defaultPostalCode);
+      }
+    }
+  };
+
+  const handleCityChange = (newCityName: string) => {
+    setSelectedCityName(newCityName);
+    const cityObj = citiesForState.find((c) => c.name === newCityName);
+    if (cityObj) {
+      if (cityObj.nearbyAddresses.length > 0) {
+        setSelectedAddressLine(cityObj.nearbyAddresses[0].address);
+        setPostalCode(cityObj.nearbyAddresses[0].postalCode);
+      } else {
+        setSelectedAddressLine(cityObj.name);
+        setPostalCode(cityObj.defaultPostalCode);
+      }
+    }
+  };
+
+  const handleAddressSelect = (addrStr: string) => {
+    setSelectedAddressLine(addrStr);
+    const match = nearbyAddresses.find((a) => a.address === addrStr);
+    if (match) {
+      setPostalCode(match.postalCode);
+    }
+  };
+
+  // 7. Medical Details (Height cm/m, Weight kg)
+  const [heightUnit, setHeightUnit] = useState<'cm' | 'm'>('cm');
   const [heightCm, setHeightCm] = useState<number>(175);
   const [weightKg, setWeightKg] = useState<number>(70);
-  const [occupation, setOccupation] = useState('Student (Exams in 1-2 weeks)');
+
+  // 8. Blood Group
+  const [bloodGroup, setBloodGroup] = useState<string>('O+');
+
+  // 9. Doctor Visit Alert
+  const [doctorName, setDoctorName] = useState('Dr. Sharma');
+  const [doctorSpecialty, setDoctorSpecialty] = useState('Sports Medicine & General Physician');
+  const [doctorClinic, setDoctorClinic] = useState('Apollo Family Health');
+  const [doctorApptDate, setDoctorApptDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    return d.toISOString().split('T')[0];
+  });
+  const [doctorApptTime, setDoctorApptTime] = useState('10:30');
+  const [doctorNotes, setDoctorNotes] = useState('Postural assessment & vitals clearance');
+  const [doctorAlertEnabled, setDoctorAlertEnabled] = useState(true);
+
+  // Other fitness details
+  const [occupation, setOccupation] = useState('Student (Final Semester)');
   const [examDate, setExamDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
     return d.toISOString().split('T')[0];
   });
-  
-  // Medical
+  const [budgetPerDay, setBudgetPerDay] = useState<number>(4.5);
+  const [fitnessGoal, setFitnessGoal] = useState<'stress-relief' | 'muscle-tone' | 'fat-loss' | 'endurance' | 'posture-rehab'>('stress-relief');
+  const [fitnessLevel, setFitnessLevel] = useState<'beginner' | 'intermediate' | 'active'>('beginner');
+  const [preferredLocation, setPreferredLocation] = useState<'home-bodyweight' | 'dorm-room' | 'campus-outdoors' | 'gym'>('home-bodyweight');
+
+  // Medical conditions
   const [jointBackIssues, setJointBackIssues] = useState('none');
   const [chronicConditions, setChronicConditions] = useState('none');
   const [dietaryRestrictions, setDietaryRestrictions] = useState('none');
   const [physicalLimitations, setPhysicalLimitations] = useState('');
 
-  // Fitness & Budget
-  const [fitnessGoal, setFitnessGoal] = useState<'stress-relief' | 'muscle-tone' | 'fat-loss' | 'endurance' | 'posture-rehab'>('stress-relief');
-  const [fitnessLevel, setFitnessLevel] = useState<'beginner' | 'intermediate' | 'active'>('beginner');
-  const [preferredLocation, setPreferredLocation] = useState<'home-bodyweight' | 'dorm-room' | 'campus-outdoors' | 'gym'>('home-bodyweight');
-  const [budgetPerDay, setBudgetPerDay] = useState<number>(4.5);
-  const [dormFacilities, setDormFacilities] = useState<DormFacilities>('none');
-
-  // Fill quick demo preset for testing
-  const loadPreset = (preset: 'student' | 'back-pain') => {
-    if (preset === 'student') {
-      setName('Jordan Lee');
-      setAge(20);
-      setGender('Non-binary');
-      setHeightCm(170);
-      setWeightKg(65);
-      setOccupation('Computer Science Student');
-      setJointBackIssues('neck-shoulder');
-      setChronicConditions('none');
-      setDietaryRestrictions('vegetarian');
-      setPhysicalLimitations('Relieve desk slouching from long study sessions');
-      setFitnessGoal('stress-relief');
-      setFitnessLevel('beginner');
-      setPreferredLocation('dorm-room');
-      setBudgetPerDay(4.0);
-      setDormFacilities('microwave-kettle');
-    } else {
-      setName('Sam Morgan');
-      setAge(26);
-      setGender('Male');
-      setHeightCm(180);
-      setWeightKg(82);
-      setOccupation('Remote Desk Worker');
-      setJointBackIssues('lower-back');
-      setChronicConditions('none');
-      setDietaryRestrictions('lactose-free');
-      setPhysicalLimitations('Avoid heavy spinal compression or deep unassisted bending');
-      setFitnessGoal('posture-rehab');
-      setFitnessLevel('intermediate');
-      setPreferredLocation('home-bodyweight');
-      setBudgetPerDay(6.0);
-      setDormFacilities('kettle-only');
-    }
+  const testDoctorBuzzer = () => {
+    playDoctorAlertBuzzer();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setErrorMsg('Please provide your name.');
+      setErrorMsg('Please enter your full name');
       return;
     }
+
+    setIsSubmitting(true);
+    setErrorMsg(null);
 
     const diffDays = Math.max(
       1,
       Math.ceil((new Date(examDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
     );
 
-    const payload = {
+    const finalHeightCm = heightUnit === 'm' ? Math.round(heightCm * 100) : heightCm;
+
+    const payload: Partial<IndividualProfile> = {
       name: name.trim(),
+      fatherName: fatherName.trim(),
+      dob,
       age,
       gender,
-      heightCm,
+      phoneCountryCode: selectedCountry.dialCode,
+      phoneNumber: phoneNumber.trim(),
+      email: email.trim(),
+      password,
+      addressCountry: selectedCountry.name,
+      addressState: selectedStateName,
+      addressCity: selectedCityName,
+      addressLine: selectedAddressLine,
+      postalCode,
+      heightCm: finalHeightCm,
+      heightUnit,
       weightKg,
+      bloodGroup,
+      doctorAlert: {
+        doctorName: doctorName.trim() || 'Dr. Sharma',
+        clinicName: doctorClinic.trim() || 'Apollo Health',
+        specialty: doctorSpecialty.trim(),
+        appointmentDate: doctorApptDate,
+        appointmentTime: doctorApptTime,
+        notes: doctorNotes.trim(),
+        enabled: doctorAlertEnabled,
+        soundEnabled: true,
+      },
+      deviceLocation: {
+        latitude: selectedCity?.lat || 18.9220,
+        longitude: selectedCity?.lng || 72.8347,
+        address: selectedAddressLine,
+        city: selectedCityName,
+        state: selectedStateName,
+        country: selectedCountry.name,
+        postalCode,
+        totalDistanceKm: 0,
+        lastUpdated: new Date().toISOString(),
+      },
       occupationOrSchedule: occupation,
       examDate,
       daysUntilExam: isNaN(diffDays) ? 7 : diffDays,
       budgetPerDay,
-      dormFacilities,
+      dormFacilities: 'microwave-kettle' as DormFacilities,
       fitnessGoal,
       fitnessLevel,
       preferredLocation,
@@ -126,370 +279,551 @@ export const InitialSetupIntake: React.FC<InitialSetupIntakeProps> = ({ onComple
       hasSmartwatch: false,
     };
 
-    setIsSubmitting(true);
-    setErrorMsg(null);
-
     try {
       await onComplete(payload);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to initialize profile on server.');
+      setErrorMsg(err.message || 'Failed to submit profile. Please retry.');
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4 sm:px-6">
-      {/* Welcome Card */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs">
-              <Flame className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-                Welcome to FitPath
-              </h1>
-              <p className="text-xs text-slate-500">
-                Personalized Fitness & Budget Nutrition • Tailored to Your Body & Medical Baseline
-              </p>
-            </div>
+    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto w-full space-y-6">
+        {/* Brand Header */}
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>FitPath AI • Comprehensive Health & Location Onboarding</span>
           </div>
-
-          {/* Quick preset buttons for instant test */}
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-slate-400">Quick fill:</span>
-            <button
-              type="button"
-              onClick={() => loadPreset('student')}
-              className="text-xs px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium transition cursor-pointer"
-            >
-              Student (Desk strain)
-            </button>
-            <button
-              type="button"
-              onClick={() => loadPreset('back-pain')}
-              className="text-xs px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium transition cursor-pointer"
-            >
-              Lower Back Safe
-            </button>
-          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            Create Your Health & Fitness Profile
+          </h1>
+          <p className="text-sm text-slate-400 max-w-xl mx-auto">
+            Provide your personal, geographic, medical, and alert details. All data synchronizes with your SQLite database every second.
+          </p>
         </div>
 
-        {errorMsg && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
+        {/* Main Intake Form */}
+        <form onSubmit={handleSubmit} className="bg-slate-950/70 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-8">
+          {errorMsg && (
+            <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Section 1: Individual Details */}
+          {/* Section 1: Personal & Contact Information */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="p-1 rounded bg-slate-100 text-slate-700">
-                <User className="w-4 h-4" />
-              </span>
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                1. Personal Details
-              </h2>
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-2 text-emerald-400">
+              <User className="w-4 h-4" />
+              <h3 className="text-xs uppercase font-extrabold tracking-wider">
+                1. Personal & Contact Information
+              </h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Your Full Name <span className="text-red-500">*</span>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  1. Full Name *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Alex Rivera"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="e.g. Aarav Sharma"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Role / Daily Routine
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  2. Father's Name *
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. University Student, Office Worker"
-                  value={occupation}
-                  onChange={(e) => setOccupation(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  required
+                  value={fatherName}
+                  onChange={(e) => setFatherName(e.target.value)}
+                  placeholder="e.g. Rajesh Sharma"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Age</label>
-                <input
-                  type="number"
-                  min="14"
-                  max="90"
-                  value={age}
-                  onChange={(e) => setAge(parseInt(e.target.value) || 20)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Gender</label>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
-                >
-                  <option value="Female">Female</option>
-                  <option value="Male">Male</option>
-                  <option value="Non-binary">Non-binary</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Height (cm)</label>
-                <input
-                  type="number"
-                  min="120"
-                  max="230"
-                  value={heightCm}
-                  onChange={(e) => setHeightCm(parseInt(e.target.value) || 170)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Weight (kg)</label>
-                <input
-                  type="number"
-                  min="35"
-                  max="200"
-                  value={weightKg}
-                  onChange={(e) => setWeightKg(parseInt(e.target.value) || 65)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                Target Exam / High-Stress Deadline Date
-              </label>
-              <input
-                type="date"
-                value={examDate}
-                onChange={(e) => setExamDate(e.target.value)}
-                className="w-full sm:w-1/2 px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
-              />
-              <span className="text-[11px] text-slate-500 mt-1 block">
-                The auto-scaler dynamically reduces workout strain during the 7-10 days leading up to this date.
-              </span>
-            </div>
-          </div>
-
-          <hr className="border-slate-100" />
-
-          {/* Section 2: Medical & Physical Health Data */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="p-1 rounded bg-amber-100 text-amber-800">
-                <HeartPulse className="w-4 h-4" />
-              </span>
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                2. Medical & Physical Considerations
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500">
-              Your workouts will be medically filtered to ensure safe joint tracking and avoid aggravating pain points.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Joint / Spine / Posture Sensitivity
-                </label>
-                <select
-                  value={jointBackIssues}
-                  onChange={(e) => setJointBackIssues(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
-                >
-                  <option value="none">No joint or back issues (Full clearance)</option>
-                  <option value="lower-back">Lower Back Sensitivity (No heavy spinal axial loading)</option>
-                  <option value="knee">Knee Sensitivity (Low-impact tracking only)</option>
-                  <option value="neck-shoulder">Desk Neck & Shoulder Strain (Add thoracic extensions)</option>
-                  <option value="wrist">Wrist Discomfort (Avoid flat floor push-ups)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Chronic Conditions
-                </label>
-                <select
-                  value={chronicConditions}
-                  onChange={(e) => setChronicConditions(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
-                >
-                  <option value="none">None</option>
-                  <option value="asthma">Asthma / Mild Respiratory (Controlled rest intervals)</option>
-                  <option value="hypertension">High Blood Pressure (Avoid Valsalva breath-holding)</option>
-                  <option value="migraine">Stress Migraines (Avoid extreme cervical straining)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Dietary Restrictions & Allergies
-                </label>
-                <select
-                  value={dietaryRestrictions}
-                  onChange={(e) => setDietaryRestrictions(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
-                >
-                  <option value="none">No Restrictions (Omnivore)</option>
-                  <option value="vegetarian">Vegetarian (Eggs & Dairy OK)</option>
-                  <option value="vegan">Vegan (100% Plant-based)</option>
-                  <option value="lactose-free">Lactose Intolerant (No Dairy)</option>
-                  <option value="gluten-free">Gluten Sensitive / Celiac</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Specific Physical Notes or Limitations (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Previous ankle sprain, prefer low noise in room"
-                  value={physicalLimitations}
-                  onChange={(e) => setPhysicalLimitations(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
-                />
-              </div>
-            </div>
-          </div>
-
-          <hr className="border-slate-100" />
-
-          {/* Section 3: Goals & Constraints */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="p-1 rounded bg-emerald-100 text-emerald-800">
-                <Dumbbell className="w-4 h-4" />
-              </span>
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                3. Fitness Goals & Budget
-              </h2>
-            </div>
-
+            {/* Age + Calendar DOB + Gender */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Fitness Goal</label>
-                <select
-                  value={fitnessGoal}
-                  onChange={(e) => setFitnessGoal(e.target.value as any)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
-                >
-                  <option value="stress-relief">Stress Relief & Mobility</option>
-                  <option value="muscle-tone">Muscle Tone & Hypertrophy</option>
-                  <option value="posture-rehab">Posture Rehabilitation</option>
-                  <option value="fat-loss">Fat Loss & Conditioning</option>
-                  <option value="endurance">Cardio & Daily Energy</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Experience Level</label>
-                <select
-                  value={fitnessLevel}
-                  onChange={(e) => setFitnessLevel(e.target.value as any)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
-                >
-                  <option value="beginner">Beginner (Gentle progression)</option>
-                  <option value="intermediate">Intermediate (Regular activity)</option>
-                  <option value="active">Active (High work capacity)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Workout Location</label>
-                <select
-                  value={preferredLocation}
-                  onChange={(e) => setPreferredLocation(e.target.value as any)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
-                >
-                  <option value="home-bodyweight">Home / Living Space (Bodyweight)</option>
-                  <option value="dorm-room">Dorm Room (Chair / Backpack)</option>
-                  <option value="campus-outdoors">Campus Outdoors / Stairs</option>
-                  <option value="gym">Gym with Free Weights</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Daily Food Budget ($ USD)
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  3. Date of Birth (Calendar) *
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-slate-400 text-sm">$</span>
                   <input
-                    type="number"
-                    step="0.5"
-                    min="2"
-                    max="30"
-                    value={budgetPerDay}
-                    onChange={(e) => setBudgetPerDay(parseFloat(e.target.value) || 4.5)}
-                    className="w-full pl-7 pr-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
+                    type="date"
+                    required
+                    value={dob}
+                    onChange={handleDobChange}
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Available Cooking Appliances
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Age (Auto Calculated)
+                </label>
+                <input
+                  type="number"
+                  min="5"
+                  max="120"
+                  value={age}
+                  onChange={(e) => setAge(parseInt(e.target.value) || 20)}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  6. Gender *
                 </label>
                 <select
-                  value={dormFacilities}
-                  onChange={(e) => setDormFacilities(e.target.value as any)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900"
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 >
-                  <option value="none">None (No Appliances / Ready-to-eat)</option>
-                  <option value="kettle-only">Electric Kettle Only</option>
-                  <option value="microwave-kettle">Microwave + Kettle</option>
-                  <option value="full-shared-kitchen">Full Kitchen (Stove & Fridge)</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Non-Binary">Non-Binary</option>
+                  <option value="Other">Other</option>
+                  <option value="Prefer not to say">Prefer not to say</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Phone with Country Code */}
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-300 mb-1">
+                4. Mobile Phone (All Country Codes Supported) *
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={selectedCountryCode}
+                  onChange={(e) => handleCountryChange(e.target.value)}
+                  className="w-40 px-3 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                >
+                  {COUNTRIES_DATA.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} {c.dialCode} ({c.name})
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  type="tel"
+                  required
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="Mobile number"
+                  className="flex-1 px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Email & Password */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  5. Email Address *
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="user@example.com"
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                  <Mail className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3.5" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  5. Account Password *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none pr-9"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-white"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Cascade Address & Google Maps Base Origin */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-2 text-emerald-400">
+              <MapPin className="w-4 h-4" />
+              <h3 className="text-xs uppercase font-extrabold tracking-wider">
+                7. Geographic Address & Base Start Origin
+              </h3>
+            </div>
+            <p className="text-xs text-slate-400">
+              Cascades country ➔ states ➔ cities ➔ nearby addresses with automatic postal code and GPS coordinate lock.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Country */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Country</label>
+                <select
+                  value={selectedCountryCode}
+                  onChange={(e) => handleCountryChange(e.target.value)}
+                  className="w-full px-3 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white"
+                >
+                  {COUNTRIES_DATA.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* State */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">State / Province</label>
+                <select
+                  value={selectedStateName}
+                  onChange={(e) => handleStateChange(e.target.value)}
+                  className="w-full px-3 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white"
+                >
+                  {statesForCountry.map((s) => (
+                    <option key={s.name} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* City */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">City</label>
+                <select
+                  value={selectedCityName}
+                  onChange={(e) => handleCityChange(e.target.value)}
+                  className="w-full px-3 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white"
+                >
+                  {citiesForState.map((c) => (
+                    <option key={c.name} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Nearby Addresses Selection */}
+            {nearbyAddresses.length > 0 && (
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Nearby Landmark / Address Suggestions (Click to auto-enter postal code)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {nearbyAddresses.map((addr, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleAddressSelect(addr.address)}
+                      className={`p-2.5 text-left rounded-xl border text-xs transition cursor-pointer flex flex-col justify-between ${
+                        selectedAddressLine === addr.address
+                          ? 'border-emerald-500 bg-emerald-950/40 text-emerald-300'
+                          : 'border-slate-800 bg-slate-900/60 text-slate-300 hover:border-slate-700'
+                      }`}
+                    >
+                      <span className="font-bold">{addr.address}</span>
+                      <span className="text-[10px] text-slate-400 mt-1">
+                        PIN: {addr.postalCode} • {addr.landmark}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Custom Address Line & Postal Code */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Street / Detailed Address Line *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={selectedAddressLine}
+                  onChange={(e) => setSelectedAddressLine(e.target.value)}
+                  placeholder="Street address or campus hall"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Postal / ZIP Code (Auto-Filled) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                  placeholder="Postal Code"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-emerald-400 font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Medical & Physiological Details */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-2 text-emerald-400">
+              <HeartPulse className="w-4 h-4" />
+              <h3 className="text-xs uppercase font-extrabold tracking-wider">
+                8. Medical & Physical Metrics (Height, Weight, Blood Group)
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Height with unit toggle */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-300">
+                    8. Height ({heightUnit}) *
+                  </label>
+                  <div className="inline-flex rounded-lg bg-slate-800 p-0.5 text-[10px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setHeightUnit('cm')}
+                      className={`px-2 py-0.5 rounded-md ${heightUnit === 'cm' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}
+                    >
+                      cm
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHeightUnit('m')}
+                      className={`px-2 py-0.5 rounded-md ${heightUnit === 'm' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}
+                    >
+                      m
+                    </button>
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  step={heightUnit === 'm' ? '0.01' : '1'}
+                  required
+                  value={heightUnit === 'm' ? (heightCm / 100).toFixed(2) : heightCm}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    if (heightUnit === 'm') {
+                      setHeightCm(Math.round(v * 100) || 175);
+                    } else {
+                      setHeightCm(Math.round(v) || 175);
+                    }
+                  }}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white font-bold"
+                />
+              </div>
+
+              {/* Weight */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  8. Weight (kg) *
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  required
+                  value={weightKg}
+                  onChange={(e) => setWeightKg(parseFloat(e.target.value) || 70)}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white font-bold"
+                />
+              </div>
+
+              {/* 9. Blood Group */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  9. Blood Group (All Listed) *
+                </label>
+                <select
+                  value={bloodGroup}
+                  onChange={(e) => setBloodGroup(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white font-bold text-emerald-400"
+                >
+                  {BLOOD_GROUPS.map((bg) => (
+                    <option key={bg} value={bg}>
+                      {bg}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
           </div>
 
-          {/* Submit Action */}
-          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Saved locally to your server. Can be reset or updated anytime.</span>
+          {/* Section 4: Doctor Visit Alert (Background Process) */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div className="flex items-center gap-2 text-indigo-400">
+                <Stethoscope className="w-4 h-4" />
+                <h3 className="text-xs uppercase font-extrabold tracking-wider">
+                  10. Doctor Visit Alert (Runs as Background Process)
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={testDoctorBuzzer}
+                className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 bg-indigo-950/60 px-2 py-1 rounded-lg border border-indigo-800/60"
+              >
+                <Volume2 className="w-3.5 h-3.5" />
+                <span>Test Alert Buzzer</span>
+              </button>
+            </div>
+            <p className="text-xs text-slate-400">
+              Alerts run in the background without cluttering the screen. When the scheduled time arrives, the buzzer sounds and the pop-up modal appears.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Doctor / Physician Name
+                </label>
+                <input
+                  type="text"
+                  value={doctorName}
+                  onChange={(e) => setDoctorName(e.target.value)}
+                  placeholder="e.g. Dr. Sharma"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Clinic / Hospital Name
+                </label>
+                <input
+                  type="text"
+                  value={doctorClinic}
+                  onChange={(e) => setDoctorClinic(e.target.value)}
+                  placeholder="e.g. Apollo Family Health"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white"
+                />
+              </div>
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Appointment Date
+                </label>
+                <input
+                  type="date"
+                  value={doctorApptDate}
+                  onChange={(e) => setDoctorApptDate(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Appointment Time
+                </label>
+                <input
+                  type="time"
+                  value={doctorApptTime}
+                  onChange={(e) => setDoctorApptTime(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-5">
+                <input
+                  type="checkbox"
+                  id="docAlertEn"
+                  checked={doctorAlertEnabled}
+                  onChange={(e) => setDoctorAlertEnabled(e.target.checked)}
+                  className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-900 border-slate-700"
+                />
+                <label htmlFor="docAlertEn" className="text-xs font-bold text-slate-300 cursor-pointer">
+                  Background Alert Active
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 5: Fitness & Academic Schedule */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-2 text-emerald-400">
+              <Dumbbell className="w-4 h-4" />
+              <h3 className="text-xs uppercase font-extrabold tracking-wider">
+                Fitness Goal & Target Exam
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Primary Fitness Goal
+                </label>
+                <select
+                  value={fitnessGoal}
+                  onChange={(e) => setFitnessGoal(e.target.value as any)}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white"
+                >
+                  <option value="stress-relief">Stress Relief & Energy (Exam Friendly)</option>
+                  <option value="muscle-tone">Muscle Tone & Lean Strength</option>
+                  <option value="fat-loss">Fat Loss & Calorie Burn</option>
+                  <option value="endurance">Endurance & Cardio Stamina</option>
+                  <option value="posture-rehab">Posture Decompression & Back Rehab</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Upcoming Exam / Target Deadline Date
+                </label>
+                <input
+                  type="date"
+                  value={examDate}
+                  onChange={(e) => setExamDate(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="pt-4">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-3 text-sm font-semibold rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 transition cursor-pointer shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold text-sm shadow-xl transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Configuring Personalized Plan...</span>
-                </>
+                <span>Saving to SQLite Database...</span>
               ) : (
                 <>
-                  <span>Generate Personalized Plan</span>
+                  <span>Create FitPath Profile & Launch Live Engine</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

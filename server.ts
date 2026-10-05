@@ -5,6 +5,45 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 
+import {
+  getFullAppData,
+  saveProfileData,
+  resetAllDatabaseData,
+  logWorkout,
+  syncTelemetry,
+  setPlanScaled,
+  addCalorieLogItem,
+  deleteCalorieLogItem,
+  updateWaterIntake,
+  saveFullDailyLog,
+  getWaterAlarmSettings,
+  updateWaterAlarmSettings,
+  getDeviceVisits,
+  addDeviceVisit,
+  deleteDeviceVisit,
+  getDoctorAlert,
+  saveDoctorAlert,
+  triggerDoctorAlert,
+  dismissDoctorAlert,
+  liveTickSync,
+  getAllTablesInfo,
+  getTableDetails,
+  executeRawQuery,
+  addColumnToTable,
+  dropColumnFromTable,
+  renameColumnInTable,
+  createNewTable,
+  dropTable,
+  insertRowIntoTable,
+  updateRowInTable,
+  deleteRowFromTable,
+  exportEntireDatabase,
+  getDatabasePath,
+  getDatabase,
+  syncTableSchema,
+  getSchemaVersion,
+} from "./db";
+
 dotenv.config();
 
 const app = express();
@@ -12,90 +51,22 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// Persistent File Storage for Individual Profile & Medical Data
-const DATA_DIR = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "individual_data.json");
+// Real-time SSE Clients for live structural synchronization across tabs and app state
+const sseClients = new Set<express.Response>();
 
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-}
-
-function loadUserData(): any {
-  ensureDataDir();
-  const defaultCalorieLog = {
-    date: new Date().toISOString().split("T")[0],
-    targetCalories: 2250,
-    activeBurnCalories: 380,
-    items: [
-      {
-        id: "log-init-1",
-        foodName: "High-Protein Microwave Oats & Peanut Butter",
-        mealType: "Breakfast",
-        calories: 410,
-        proteinGrams: 22,
-        fatGrams: 14,
-        carbsGrams: 48,
-        timestamp: "08:30 AM",
-      },
-      {
-        id: "log-init-2",
-        foodName: "Tuna & Brown Rice High-Protein Salad",
-        mealType: "Lunch",
-        calories: 480,
-        proteinGrams: 28,
-        fatGrams: 12,
-        carbsGrams: 58,
-        timestamp: "01:15 PM",
-      },
-    ],
-    waterGlasses: 5,
-    waterTargetGlasses: 8,
-  };
-
-  if (!fs.existsSync(DATA_FILE)) {
-    return {
-      exists: false,
-      profile: null,
-      activeRoutine: null,
-      baselineRoutine: null,
-      scaledRoutine: null,
-      meals: [],
-      telemetry: null,
-      isAutoScaled: false,
-      workoutHistory: [],
-      dailyCalorieLog: defaultCalorieLog,
-    };
-  }
-  try {
-    const raw = fs.readFileSync(DATA_FILE, "utf-8");
-    const parsed = JSON.parse(raw);
-    if (!parsed.dailyCalorieLog) {
-      parsed.dailyCalorieLog = defaultCalorieLog;
+function broadcastSchemaSync(eventData: any) {
+  const payload = `event: schema_sync\ndata: ${JSON.stringify(eventData)}\n\n`;
+  for (const client of Array.from(sseClients)) {
+    try {
+      client.write(payload);
+    } catch {
+      sseClients.delete(client);
     }
-    return parsed;
-  } catch (err) {
-    console.error("Error reading individual_data.json:", err);
-    return {
-      exists: false,
-      profile: null,
-      activeRoutine: null,
-      baselineRoutine: null,
-      scaledRoutine: null,
-      meals: [],
-      telemetry: null,
-      isAutoScaled: false,
-      workoutHistory: [],
-      dailyCalorieLog: defaultCalorieLog,
-    };
   }
 }
 
-function saveUserData(data: any) {
-  ensureDataDir();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
-}
+// Initialize SQLite database on boot
+getDatabase();
 
 // Lazy-initialized Gemini client
 let genAIClient: GoogleGenAI | null = null;
@@ -124,7 +95,7 @@ function parseJsonSafely(raw: string): any {
   return JSON.parse(cleaned.trim());
 }
 
-// Resilient generation with automatic model fallback and retry for high-demand spikes (503 / 429)
+// Resilient generation with automatic model fallback and retry for high-demand spikes
 async function generateGeminiContentWithFallback(
   prompt: string,
   options: {
@@ -136,7 +107,6 @@ async function generateGeminiContentWithFallback(
   const ai = getGenAI();
   if (!ai) return null;
 
-  // Use gemini-3.1-flash-lite as primary high-throughput model with automatic fallback to gemini-3.8-flash
   const modelsToTry = ["gemini-3.1-flash-lite", "gemini-3.8-flash"];
 
   for (const model of modelsToTry) {
@@ -164,11 +134,9 @@ async function generateGeminiContentWithFallback(
           err?.message?.includes("RESOURCE_EXHAUSTED");
 
         if (isTransient && attempt === 1) {
-          // Brief pause before retry
           await new Promise((resolve) => setTimeout(resolve, 500));
           continue;
         }
-        // Fall through to next model candidate
         break;
       }
     }
@@ -177,36 +145,34 @@ async function generateGeminiContentWithFallback(
   return null;
 }
 
-// Health check
+// Health check with SQLite status
 app.get("/api/health", (_req, res) => {
-  const current = loadUserData();
+  const current = getFullAppData();
   res.json({
     status: "ok",
     service: "FitPath Server",
+    database: "SQLite Relational Database (data/fitpath.db)",
     hasProfile: current.exists,
     aiAvailable: !!process.env.GEMINI_API_KEY,
   });
 });
 
-// 1. GET User Profile & Active Plan
+// 1. GET User Profile & Active Plan from SQLite
 app.get("/api/user/profile", (_req, res) => {
-  const data = loadUserData();
+  const data = getFullAppData();
   res.json(data);
 });
 
 // 2. RESET User Data (Starts with zero data for a new individual)
 app.post("/api/user/reset", (_req, res) => {
-  ensureDataDir();
-  if (fs.existsSync(DATA_FILE)) {
-    fs.unlinkSync(DATA_FILE);
-  }
+  resetAllDatabaseData();
   res.json({
     success: true,
-    message: "Server data wiped. Ready for new individual onboarding.",
+    message: "SQLite database wiped. Ready for new individual onboarding.",
   });
 });
 
-// 3. POST User Details & Medical Data -> Generates Custom Plan and Persists
+// 3. POST User Details & Medical Data -> Generates Custom Plan and Persists in SQLite
 app.post("/api/user/profile", async (req, res) => {
   try {
     const profile = req.body;
@@ -390,7 +356,6 @@ Return JSON with this exact structure:
       const isBackIssue = jointBack.includes("back") || jointBack.includes("spine");
       const isKneeIssue = jointBack.includes("knee");
       const isVeg = dietRestrictions.includes("vegetarian") || dietRestrictions.includes("vegan");
-
       const isGym = preferredLocation === "gym" || preferredLocation === "student-rec-gym";
 
       generatedBaselineRoutine = {
@@ -436,7 +401,7 @@ Return JSON with this exact structure:
                 dormEquipmentNeeded: "Plate-Loaded 45° Incline Leg Press Machine",
                 targetBenefit: "Quadriceps, gluteus maximus, hamstrings",
                 postureFocus: "Lower back pressed flat against pad, knees track toes, don't lock knees at apex",
-                medicalSafetyNote: "Keep hips glued to the seat back to avoid dangerous lumbar rounding (butt wink)",
+                medicalSafetyNote: "Keep hips glued to the seat back to avoid dangerous lumbar rounding",
                 level: "moderate",
                 bodyPart: "legs",
               },
@@ -450,39 +415,6 @@ Return JSON with this exact structure:
                 medicalSafetyNote: "EZ-bar reduces wrist supination strain for carpal tunnel and wrist joint safety",
                 level: "moderate",
                 bodyPart: "biceps",
-              },
-              {
-                name: "Triceps Cable Rope Pushdowns",
-                sets: 3,
-                repsOrDuration: "12-15 reps",
-                dormEquipmentNeeded: "High Cable Pulley & Rope Attachment",
-                targetBenefit: "Triceps brachii (lateral, long & medial heads)",
-                postureFocus: "Elbows anchored at flanks, flare rope out at the bottom squeeze",
-                medicalSafetyNote: "Keep shoulders depressed away from ears to protect trapezius",
-                level: "easy",
-                bodyPart: "triceps",
-              },
-              {
-                name: "Seated Dumbbell Overhead Shoulder Press",
-                sets: 3,
-                repsOrDuration: "10-12 reps",
-                dormEquipmentNeeded: "Adjustable Incline/Flat Bench & Dumbbells",
-                targetBenefit: "Anterior & lateral deltoids, clavicular pectorals, triceps",
-                postureFocus: "Bench set to 75-80° incline, press up in slight arc without banging weights",
-                medicalSafetyNote: "Avoid flared 90° elbows; keep hands in scapular plane (30° forward)",
-                level: "intense",
-                bodyPart: "shoulders",
-              },
-              {
-                name: "Captain's Chair / Hanging Knee & Leg Raises",
-                sets: 3,
-                repsOrDuration: "12-15 controlled reps",
-                dormEquipmentNeeded: "Captain's Chair Power Tower or Pull-up Bar",
-                targetBenefit: "Rectus abdominis & deep core transverse stability",
-                postureFocus: "Forearms pressed into pads, curl knees towards sternum without swinging",
-                medicalSafetyNote: "Curl pelvis upwards rather than flexing only hip flexors to protect lower back",
-                level: "moderate",
-                bodyPart: "core",
               },
             ]
           : [
@@ -572,136 +504,65 @@ Return JSON with this exact structure:
         ],
       };
 
-      const isNoAppliance = dormFacilities === 'none';
-
-      generatedMeals = isNoAppliance
-        ? [
-            {
-              id: `meal-${Date.now()}-0`,
-              name: "Peanut Butter, Banana & Crushed Nut Whole Wheat Wrap",
-              mealType: "Breakfast",
-              cost: Math.min(1.10, budgetPerDay * 0.25),
-              prepTimeMinutes: 2,
-              calories: 420,
-              proteinGrams: 18,
-              appliances: "None (Zero Cooking / Ready-to-eat)",
-              ingredients: ["Whole wheat tortilla", "2 tbsp Peanut butter", "1 Banana", "Handful crushed almonds or peanuts"],
-              studentHack: "Zero heat needed. Spread peanut butter on wrap, roll up with sliced banana for instant high-energy cognitive breakfast.",
-              medicalDietNote: "Rich in complex carbs, potassium and healthy fats for sustained morning focus.",
-            },
-            {
-              id: `meal-${Date.now()}-1`,
-              name: isVeg
-                ? "Ready-to-Eat Mediterranean Chickpea & Cucumber Salad"
-                : "Canned Chunk Light Tuna & Sweet Corn Protein Salad",
-              mealType: "Lunch",
-              cost: Math.min(1.40, budgetPerDay * 0.4),
-              prepTimeMinutes: 3,
-              calories: 460,
-              proteinGrams: isVeg ? 22 : 32,
-              appliances: "None (Zero Cooking / Ready-to-eat)",
-              ingredients: isVeg
-                ? ["1 Can rinsed chickpeas", "Diced cucumber", "Lemon juice", "Olive oil or chaat masala", "Tomato"]
-                : ["1 Can chunk light tuna in water", "Canned sweet corn", "Lemon juice & black pepper", "Whole wheat crackers"],
-              studentHack: "Canned legumes and tuna require zero appliances or refrigeration. Drain, season, and eat straight from bowl.",
-              medicalDietNote: "High bioavailability protein and dietary fiber with zero cooking cleanup.",
-            },
-            {
-              id: `meal-${Date.now()}-2`,
-              name: "High-Protein Greek Yogurt / Curd Parfait with Chia Seeds",
-              mealType: "Dinner",
-              cost: Math.min(1.30, budgetPerDay * 0.35),
-              prepTimeMinutes: 2,
-              calories: 410,
-              proteinGrams: 24,
-              appliances: "None (Zero Cooking / Ready-to-eat)",
-              ingredients: ["1 Cup Greek yogurt or plain curd", "Rolled oats (soaked in yogurt)", "Honey or jaggery", "Roasted peanuts"],
-              studentHack: "Letting oats soak in yogurt for 15 minutes softens them completely without any boiling water or microwave.",
-              medicalDietNote: "Casein protein and live probiotics promote gut-brain microbiome health and deep sleep.",
-            },
-          ]
-        : [
-            {
-              id: `meal-${Date.now()}-0`,
-              name: "High-Protein Microwave Oats with Peanut Butter",
-              mealType: "Breakfast",
-              cost: Math.min(1.20, budgetPerDay * 0.25),
-              prepTimeMinutes: 3,
-              calories: 410,
-              proteinGrams: 22,
-              appliances: "Kettle or Microwave",
-              ingredients: ["Rolled oats", "2 tbsp Peanut butter", "Hot water or plant milk", "Cinnamon"],
-              studentHack: "Stir in peanut butter while hot for creamy protein boost without protein powder.",
-              medicalDietNote: isVeg ? "100% vegetarian & budget friendly" : "Easy digestion",
-            },
-            {
-              id: `meal-${Date.now()}-1`,
-              name: isVeg ? "Microwave Black Bean & Rice Fiesta Bowl" : "Tuna & Brown Rice High-Protein Salad",
-              mealType: "Lunch",
-              cost: Math.min(1.80, budgetPerDay * 0.4),
-              prepTimeMinutes: 4,
-              calories: 480,
-              proteinGrams: 28,
-              appliances: "Microwave or No Cooking",
-              ingredients: isVeg
-                ? ["Canned black beans", "Pre-cooked microwave brown rice", "Salsa", "Cheddar or nutritional yeast"]
-                : ["Can of chunk light tuna", "Microwave brown rice", "Soy sauce & lime", "Sweet corn"],
-              studentHack: "Rinse canned beans or fish; mix with warm rice for instant hearty lunch with zero pots to wash.",
-              medicalDietNote: "Rich in complex carbs for sustained cognitive focus without sugar crash",
-            },
-            {
-              id: `meal-${Date.now()}-2`,
-              name: "Mug-Scrambled Eggs & Whole Wheat Toast",
-              mealType: "Dinner",
-              cost: Math.min(1.50, budgetPerDay * 0.35),
-              prepTimeMinutes: 4,
-              calories: 430,
-              proteinGrams: 24,
-              appliances: "Microwave",
-              ingredients: ["2 Fresh eggs", "Salt & pepper", "2 Slices whole wheat bread", "Butter or olive oil"],
-              studentHack: "Whisk eggs in a coffee mug with a fork, microwave 60-70 seconds for fluffy eggs with no skillet.",
-              medicalDietNote: "High choline for memory consolidation during revision",
-            },
-          ];
+      generatedMeals = [
+        {
+          id: `meal-${Date.now()}-0`,
+          name: "High-Protein Microwave Oats with Peanut Butter",
+          mealType: "Breakfast",
+          cost: Math.min(1.2, budgetPerDay * 0.25),
+          prepTimeMinutes: 3,
+          calories: 410,
+          proteinGrams: 22,
+          appliances: "Kettle or Microwave",
+          ingredients: ["Rolled oats", "2 tbsp Peanut butter", "Hot water or plant milk", "Cinnamon"],
+          studentHack: "Stir in peanut butter while hot for creamy protein boost without protein powder.",
+          medicalDietNote: isVeg ? "100% vegetarian & budget friendly" : "Easy digestion",
+        },
+        {
+          id: `meal-${Date.now()}-1`,
+          name: isVeg ? "Microwave Black Bean & Rice Fiesta Bowl" : "Tuna & Brown Rice High-Protein Salad",
+          mealType: "Lunch",
+          cost: Math.min(1.8, budgetPerDay * 0.4),
+          prepTimeMinutes: 4,
+          calories: 480,
+          proteinGrams: 28,
+          appliances: "Microwave or No Cooking",
+          ingredients: isVeg
+            ? ["Canned black beans", "Pre-cooked microwave brown rice", "Salsa", "Cheddar or nutritional yeast"]
+            : ["Can of chunk light tuna", "Microwave brown rice", "Soy sauce & lime", "Sweet corn"],
+          studentHack: "Rinse canned beans or fish; mix with warm rice for instant hearty lunch with zero pots to wash.",
+          medicalDietNote: "Rich in complex carbs for sustained cognitive focus without sugar crash",
+        },
+        {
+          id: `meal-${Date.now()}-2`,
+          name: "Mug-Scrambled Eggs & Whole Wheat Toast",
+          mealType: "Dinner",
+          cost: Math.min(1.5, budgetPerDay * 0.35),
+          prepTimeMinutes: 4,
+          calories: 430,
+          proteinGrams: 24,
+          appliances: "Microwave",
+          ingredients: ["2 Fresh eggs", "Salt & pepper", "2 Slices whole wheat bread", "Butter or olive oil"],
+          studentHack: "Whisk eggs in a coffee mug with a fork, microwave 60-70 seconds for fluffy eggs with no skillet.",
+          medicalDietNote: "High choline for memory consolidation during revision",
+        },
+      ];
     }
 
-    // Determine initial auto-scaled status (true if exam is within 8 days)
-    const isAutoScaled = daysUntilExam <= 8;
-    const activeRoutine = isAutoScaled ? generatedScaledRoutine : generatedBaselineRoutine;
-
-    const initialTelemetry = {
-      stepsToday: 0,
-      targetSteps: 8000,
-      sleepHours: 0,
-      screenOffEstimatedSleep: 0,
-      activeMinutes: 0,
-      walkingCadenceRpm: 0,
-      campusStairsClimbed: 0,
-      lastSyncedAt: "Initialized from phone sensors (0 steps)",
-      source: "Phone Built-in Accelerometer",
+    // Persist in SQLite
+    const profilePayload = {
+      id: profile.id || `profile-${Date.now()}`,
+      ...profile,
+      medical,
     };
 
-    const savedData = {
-      exists: true,
-      profile: {
-        ...profile,
-        medical,
-        updatedAt: new Date().toISOString(),
-      },
-      baselineRoutine: generatedBaselineRoutine,
-      scaledRoutine: generatedScaledRoutine,
-      activeRoutine,
-      isAutoScaled,
-      meals: generatedMeals,
-      telemetry: initialTelemetry,
-      workoutHistory: [],
-    };
+    saveProfileData(profilePayload, generatedBaselineRoutine, generatedScaledRoutine, generatedMeals);
 
-    saveUserData(savedData);
+    const updatedData = getFullAppData();
 
     return res.json({
       success: true,
-      data: savedData,
+      data: updatedData,
     });
   } catch (err: any) {
     console.error("Error saving user profile:", err);
@@ -709,62 +570,57 @@ Return JSON with this exact structure:
   }
 });
 
-// 4. Log completed workout
+// 4. Log completed workout to SQLite
 app.post("/api/workout/complete", (req, res) => {
-  const current = loadUserData();
+  const current = getFullAppData();
   if (!current.exists) {
     return res.status(404).json({ error: "No active profile found" });
   }
 
-  const { routineTitle, completedCount, durationMinutes } = req.body;
-  const historyEntry = {
-    id: `log-${Date.now()}`,
-    routineTitle: routineTitle || current.activeRoutine?.title || "Workout",
-    completedCount: completedCount || 0,
-    durationMinutes: durationMinutes || 20,
-    date: new Date().toISOString(),
-  };
+  const { routineTitle, completedCount, durationMinutes, burnedCalories, exercises } = req.body;
+  const cal = burnedCalories || Math.round((durationMinutes || 20) * 9.5);
 
-  current.workoutHistory = [historyEntry, ...(current.workoutHistory || [])];
-  saveUserData(current);
+  logWorkout(
+    routineTitle || current.activeRoutine?.title || "Workout",
+    completedCount || 1,
+    durationMinutes || 20,
+    cal,
+    exercises || []
+  );
 
-  res.json({ success: true, history: current.workoutHistory });
+  const updated = getFullAppData();
+  res.json({ success: true, history: updated.workoutHistory });
 });
 
-// 5. Sync Phone Health Telemetry
+// 5. Sync Phone Health Telemetry to SQLite
 app.post("/api/sensors/sync", (req, res) => {
-  const current = loadUserData();
+  const current = getFullAppData();
   if (!current.exists) {
     return res.status(404).json({ error: "No active profile found" });
   }
 
   const newTelemetry = req.body;
-  current.telemetry = {
-    ...current.telemetry,
-    ...newTelemetry,
-    lastSyncedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-  };
-  saveUserData(current);
+  syncTelemetry(newTelemetry);
 
-  res.json({ success: true, telemetry: current.telemetry });
+  const updated = getFullAppData();
+  res.json({ success: true, telemetry: updated.telemetry });
 });
 
 // 6. Plan Adaptation / Auto-Scale Toggle
 app.post("/api/plan/adjust", (req, res) => {
-  const current = loadUserData();
+  const current = getFullAppData();
   if (!current.exists) {
     return res.status(404).json({ error: "No active profile found" });
   }
 
   const { useScaled } = req.body;
-  current.isAutoScaled = !!useScaled;
-  current.activeRoutine = useScaled ? current.scaledRoutine : current.baselineRoutine;
-  saveUserData(current);
+  setPlanScaled(!!useScaled);
 
+  const updated = getFullAppData();
   res.json({
     success: true,
-    isAutoScaled: current.isAutoScaled,
-    activeRoutine: current.activeRoutine,
+    isAutoScaled: updated.isAutoScaled,
+    activeRoutine: updated.activeRoutine,
   });
 });
 
@@ -925,10 +781,10 @@ Output JSON:
   }
 });
 
-// 9. REST API: Food Nutrition Measure (Calculate protein, fat, carbs, calories via Gemini / Clinical Engine)
+// 9. REST API: Food Nutrition Measure
 app.post("/api/nutrition/analyze", async (req, res) => {
   try {
-    const { foodQuery, studentBudget } = req.body;
+    const { foodQuery } = req.body;
     if (!foodQuery || typeof foodQuery !== "string") {
       return res.status(400).json({ error: "foodQuery string is required" });
     }
@@ -967,13 +823,7 @@ Return JSON in this exact structure:
     "Swap butter for olive oil or peanut butter for heart-healthy monounsaturated fats.",
     "Add chia or flaxseeds for omega-3 brain fuel."
   ]
-}
-
-Note:
-- studentAffordability must be one of: "Budget Master", "Moderate", "Treat"
-- prepComplexity must be one of: "No Cook", "Kettle/Microwave", "Full Kitchen"
-- healthScore should be a number from 1 to 100
-- Return ONLY valid JSON, no markdown outside of JSON.`;
+}`;
 
       try {
         const rawText = await generateGeminiContentWithFallback(prompt, {
@@ -989,7 +839,7 @@ Note:
       }
     }
 
-    // High-accuracy fallback clinical database if AI is offline or rate-limited
+    // High-accuracy fallback clinical database
     if (!analysisResult) {
       const q = foodQuery.toLowerCase();
       let calories = 350;
@@ -1002,8 +852,8 @@ Note:
       let sugar = 4;
       let cost = "$1.25 (₹100)";
       let healthScore = 85;
-      let affordability: 'Budget Master' | 'Moderate' | 'Treat' = "Budget Master";
-      let prep: 'No Cook' | 'Kettle/Microwave' | 'Full Kitchen' = "Kettle/Microwave";
+      let affordability = "Budget Master";
+      let prep = "Kettle/Microwave";
       let cognitive = "Provides steady cognitive energy without sharp insulin spikes.";
       let allergens: string[] = [];
       let smartSwaps: string[] = ["Pair with a glass of water to optimize nutrient absorption."];
@@ -1076,28 +926,8 @@ Note:
         affordability = "Moderate";
         healthScore = 95;
         cognitive = "High tryptophan and B-vitamins promote neurotransmitter synthesis and reduce exam anxiety.";
-      } else if (q.includes("maggi") || q.includes("ramen") || q.includes("noodle")) {
-        calories = 380;
-        protein = 8;
-        fat = 14;
-        carbs = 56;
-        fiber = 2;
-        satFat = 6;
-        sodium = 920;
-        sugar = 3;
-        cost = "$0.60 (₹45)";
-        healthScore = 58;
-        affordability = "Budget Master";
-        prep = "Kettle/Microwave";
-        cognitive = "High glycemic load can lead to a post-meal study slump within 90 minutes.";
-        allergens = ["Gluten", "Soy"];
-        smartSwaps = [
-          "Crack an egg or toss in 50g paneer into boiling noodles to add 12g protein.",
-          "Use only half the tastemaker seasoning packet to cut sodium in half."
-        ];
       }
 
-      const totalMacroGrams = protein + fat + carbs;
       analysisResult = {
         foodName: foodQuery.trim().replace(/^./, (c) => c.toUpperCase()),
         calories,
@@ -1137,7 +967,7 @@ Note:
   }
 });
 
-// 10. REST API: Physical Measures Calculator (BMI, BMR, TDEE, Calorie Counter Targets)
+// 10. REST API: Physical Measures Calculator
 app.post("/api/metrics/calculate", (req, res) => {
   try {
     const {
@@ -1153,27 +983,26 @@ app.post("/api/metrics/calculate", (req, res) => {
     const heightM = heightCm / 100;
     const bmi = parseFloat((weightKg / (heightM * heightM)).toFixed(1));
 
-    let bmiCategory: 'Underweight' | 'Normal' | 'Overweight' | 'Obese' = "Normal";
-    let bmiClassificationColor = "#10B981"; // emerald
+    let bmiCategory: "Underweight" | "Normal" | "Overweight" | "Obese" = "Normal";
+    let bmiClassificationColor = "#10B981";
 
     if (bmi < 18.5) {
       bmiCategory = "Underweight";
-      bmiClassificationColor = "#3B82F6"; // blue
+      bmiClassificationColor = "#3B82F6";
     } else if (bmi < 25) {
       bmiCategory = "Normal";
-      bmiClassificationColor = "#10B981"; // emerald
+      bmiClassificationColor = "#10B981";
     } else if (bmi < 30) {
       bmiCategory = "Overweight";
-      bmiClassificationColor = "#F59E0B"; // amber
+      bmiClassificationColor = "#F59E0B";
     } else {
       bmiCategory = "Obese";
-      bmiClassificationColor = "#EF4444"; // red
+      bmiClassificationColor = "#EF4444";
     }
 
     const healthyWeightMinKg = Math.round(18.5 * heightM * heightM);
     const healthyWeightMaxKg = Math.round(24.9 * heightM * heightM);
 
-    // BMR via Mifflin-St Jeor equation
     let bmr = 10 * weightKg + 6.25 * heightCm - 5 * age;
     if (gender.toLowerCase().startsWith("f")) {
       bmr -= 161;
@@ -1181,20 +1010,14 @@ app.post("/api/metrics/calculate", (req, res) => {
       bmr += 5;
     }
     const bmrCalories = Math.round(bmr);
-
-    // Active burn from phone step sensors (~0.04 kcal per step)
     const activeBurnFromSteps = Math.round(stepsToday * 0.04);
-
-    // TDEE: Sedentary Base (BMR * 1.2) + Phone sensor step burn
     const baseTdee = Math.round(bmrCalories * 1.25);
     const tdeeCalories = baseTdee + activeBurnFromSteps;
 
-    // Exam stress & goal caloric target
     let targetCalories = tdeeCalories;
     let examStressMultiplier = 1.0;
-
     if (daysUntilExam <= 7) {
-      examStressMultiplier = 1.05; // 5% buffer for intense cognitive glucose turnover
+      examStressMultiplier = 1.05;
     }
 
     if (fitnessGoal === "fat-loss") {
@@ -1204,32 +1027,25 @@ app.post("/api/metrics/calculate", (req, res) => {
     } else if (fitnessGoal === "endurance") {
       targetCalories = Math.round((tdeeCalories + 200) * examStressMultiplier);
     } else {
-      // stress-relief / posture-rehab: maintain energy equilibrium
       targetCalories = Math.round(tdeeCalories * examStressMultiplier);
     }
 
-    // Macronutrient targets (Student Sports Nutrition Standards)
-    // Protein: 1.8g per kg body weight
     const proteinGrams = Math.round(weightKg * 1.8);
-    // Fat: 25% of total caloric intake
     const fatCalories = targetCalories * 0.25;
     const fatGrams = Math.round(fatCalories / 9);
-    // Carbs: remaining calories / 4
     const carbCalories = targetCalories - (proteinGrams * 4 + fatCalories);
     const carbsGrams = Math.max(120, Math.round(carbCalories / 4));
     const fiberGrams = Math.round(Math.max(28, (targetCalories / 1000) * 14));
 
-    // Ideal body weight via Devine Formula
-    const inchesOver5Ft = Math.max(0, (heightCm / 2.54) - 60);
+    const inchesOver5Ft = Math.max(0, heightCm / 2.54 - 60);
     let idealWeightKg = gender.toLowerCase().startsWith("f")
       ? 45.5 + 2.3 * inchesOver5Ft
       : 50.0 + 2.3 * inchesOver5Ft;
     idealWeightKg = Math.round(idealWeightKg);
 
-    // Hydration target: 35ml/kg + 0.35L per 3000 steps
-    const hydrationTargetLiters = parseFloat(((weightKg * 0.035) + (stepsToday / 3000) * 0.35).toFixed(1));
+    const hydrationTargetLiters = parseFloat((weightKg * 0.035 + (stepsToday / 3000) * 0.35).toFixed(1));
 
-    const clinicalExplanation = `Based on your height (${heightCm}cm) and weight (${weightKg}kg), your BMI is ${bmi} (${bmiCategory}). Your Basal Metabolic Rate is ${bmrCalories} kcal/day. Incorporating your phone sensor activity (${stepsToday.toLocaleString()} steps today = ~${activeBurnFromSteps} kcal active burn) and ${daysUntilExam}d exam proximity, your optimal daily energy target is ${targetCalories} kcal.`;
+    const clinicalExplanation = `Based on height (${heightCm}cm) and weight (${weightKg}kg), your BMI is ${bmi} (${bmiCategory}). BMR is ${bmrCalories} kcal/day. Incorporating phone sensor activity (${stepsToday.toLocaleString()} steps today = ~${activeBurnFromSteps} kcal active burn) and ${daysUntilExam}d exam proximity, your optimal daily energy target is ${targetCalories} kcal.`;
 
     res.json({
       success: true,
@@ -1260,109 +1076,477 @@ app.post("/api/metrics/calculate", (req, res) => {
   }
 });
 
-// 11. GET Daily Calorie Counter & Water Log
+// 11. GET Daily Calorie Counter & Water Log from SQLite
 app.get("/api/user/calorie-log", (_req, res) => {
-  const current = loadUserData();
+  const current = getFullAppData();
   res.json({
     success: true,
     calorieLog: current.dailyCalorieLog,
   });
 });
 
-// 12. POST Add Food to Calorie Counter Log
+// 12. POST Add Food to Calorie Counter Log in SQLite
 app.post("/api/user/calorie-log/add", (req, res) => {
-  const current = loadUserData();
   const { foodName, mealType = "Snack", calories, proteinGrams, fatGrams, carbsGrams } = req.body;
-
   if (!foodName || calories === undefined) {
     return res.status(400).json({ error: "foodName and calories are required" });
   }
 
-  const newItem = {
-    id: `log-${Date.now()}`,
+  const newItem = addCalorieLogItem({
     foodName,
     mealType,
     calories: Number(calories) || 0,
     proteinGrams: Number(proteinGrams) || 0,
     fatGrams: Number(fatGrams) || 0,
     carbsGrams: Number(carbsGrams) || 0,
-    timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-  };
+  });
 
-  if (!current.dailyCalorieLog) {
-    current.dailyCalorieLog = {
-      date: new Date().toISOString().split("T")[0],
-      targetCalories: 2250,
-      activeBurnCalories: 380,
-      items: [],
-      waterGlasses: 4,
-      waterTargetGlasses: 8,
-    };
-  }
-
-  current.dailyCalorieLog.items.unshift(newItem);
-  saveUserData(current);
-
+  const updated = getFullAppData();
   res.json({
     success: true,
     item: newItem,
-    calorieLog: current.dailyCalorieLog,
+    calorieLog: updated.dailyCalorieLog,
   });
 });
 
-// 13. POST Delete Food from Calorie Counter Log
+// 13. POST Delete Food from Calorie Counter Log in SQLite
 app.post("/api/user/calorie-log/delete", (req, res) => {
-  const current = loadUserData();
   const { id } = req.body;
-
-  if (current.dailyCalorieLog && current.dailyCalorieLog.items) {
-    current.dailyCalorieLog.items = current.dailyCalorieLog.items.filter((item: any) => item.id !== id);
-    saveUserData(current);
+  if (id) {
+    deleteCalorieLogItem(id);
   }
 
+  const updated = getFullAppData();
   res.json({
     success: true,
-    calorieLog: current.dailyCalorieLog,
+    calorieLog: updated.dailyCalorieLog,
   });
 });
 
-// 14. POST Update Water Log (glasses count)
+// 14. POST Update Water Log (glasses count) in SQLite
 app.post("/api/user/calorie-log/water", (req, res) => {
-  const current = loadUserData();
-  const { change } = req.body; // +1 or -1 or absolute number
+  const { change } = req.body;
+  const newCount = updateWaterIntake(typeof change === "number" ? change : 1);
 
-  if (!current.dailyCalorieLog) {
-    current.dailyCalorieLog = {
-      date: new Date().toISOString().split("T")[0],
-      targetCalories: 2250,
-      activeBurnCalories: 380,
-      items: [],
-      waterGlasses: 4,
-      waterTargetGlasses: 8,
-    };
-  }
-
-  if (typeof change === "number") {
-    current.dailyCalorieLog.waterGlasses = Math.max(0, current.dailyCalorieLog.waterGlasses + change);
-  }
-  saveUserData(current);
-
+  const updated = getFullAppData();
   res.json({
     success: true,
-    waterGlasses: current.dailyCalorieLog.waterGlasses,
-    calorieLog: current.dailyCalorieLog,
+    waterGlasses: newCount,
+    calorieLog: updated.dailyCalorieLog,
   });
 });
 
-// 15. POST Update Full Daily Activity, Workout & Diet Log (Persistent State)
+// 15. POST Update Full Daily Activity, Workout & Diet Log (Persistent State in SQLite)
 app.post("/api/user/daily-log/update", (req, res) => {
-  const current = loadUserData();
-  current.dailyLog = req.body;
-  saveUserData(current);
+  saveFullDailyLog(req.body);
   res.json({
     success: true,
-    dailyLog: current.dailyLog,
+    dailyLog: req.body,
   });
+});
+
+// 16. Water Alarm Background Process Settings Endpoints
+app.get("/api/water-alarm/settings", (_req, res) => {
+  const settings = getWaterAlarmSettings();
+  res.json({ success: true, settings });
+});
+
+app.post("/api/water-alarm/settings", (req, res) => {
+  const updated = updateWaterAlarmSettings(req.body);
+  res.json({ success: true, settings: updated });
+});
+
+app.post("/api/water-alarm/log-buzz", (_req, res) => {
+  const updated = updateWaterAlarmSettings({ lastBuzzTimestamp: new Date().toISOString() });
+  res.json({ success: true, settings: updated });
+});
+
+// 17. Google Maps Device Visits & Location Tracking Endpoints
+app.get("/api/device/visits", (_req, res) => {
+  try {
+    const visits = getDeviceVisits();
+    res.json({ success: true, visits });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to fetch device visits" });
+  }
+});
+
+app.post("/api/device/visits", (req, res) => {
+  try {
+    const { placeName, latitude, longitude, distanceKm, category, notes } = req.body;
+    if (!placeName || latitude === undefined || longitude === undefined) {
+      return res.status(400).json({ error: "placeName, latitude, and longitude are required" });
+    }
+    const newVisit = addDeviceVisit({ placeName, latitude, longitude, distanceKm, category, notes });
+    res.json({ success: true, visit: newVisit });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to add device visit" });
+  }
+});
+
+app.delete("/api/device/visits/:id", (req, res) => {
+  try {
+    const result = deleteDeviceVisit(req.params.id);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to delete device visit" });
+  }
+});
+
+// 18. Background Doctor Visit Alert Endpoints
+app.get("/api/doctor/alert", (_req, res) => {
+  try {
+    const alert = getDoctorAlert();
+    res.json({ success: true, alert });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to fetch doctor alert" });
+  }
+});
+
+app.post("/api/doctor/alert", (req, res) => {
+  try {
+    const updated = saveDoctorAlert(req.body);
+    res.json({ success: true, alert: updated });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to save doctor alert" });
+  }
+});
+
+app.post("/api/doctor/alert/trigger", (_req, res) => {
+  try {
+    const result = triggerDoctorAlert();
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/doctor/alert/dismiss", (_req, res) => {
+  try {
+    const result = dismissDoctorAlert();
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 19. High-Frequency 1-Second Auto-Sync Endpoint
+// Everything syncs within every single second
+app.post("/api/sync/tick", (req, res) => {
+  try {
+    const result = liveTickSync(req.body || {});
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// DIRECT DATABASE MANAGEMENT API ENDPOINTS (Connected to database-manager.html)
+// ---------------------------------------------------------------------------
+
+// A. DB Status & Overview
+app.get("/api/db/status", (_req, res) => {
+  try {
+    const tables = getAllTablesInfo();
+    const dbPath = getDatabasePath();
+    let stats = { size: 0 };
+    if (fs.existsSync(dbPath)) {
+      stats = fs.statSync(dbPath);
+    }
+
+    res.json({
+      success: true,
+      engine: "SQLite 3",
+      dbPath: "data/fitpath.db",
+      sizeBytes: stats.size,
+      sizeFormatted: `${(stats.size / 1024).toFixed(1)} KB`,
+      tablesCount: tables.length,
+      connected: true,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// B. List all tables with schema and row counts
+app.get("/api/db/tables", (_req, res) => {
+  try {
+    const tables = getAllTablesInfo();
+    res.json({ success: true, tables });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// C. Get table details (columns, SQL, rows)
+app.get("/api/db/table/:name", (req, res) => {
+  try {
+    const { name } = req.params;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = parseInt(req.query.offset as string) || 0;
+    const search = (req.query.search as string) || "";
+
+    const details = getTableDetails(name, { limit, offset, search });
+    res.json({ success: true, details });
+  } catch (err: any) {
+    res.status(404).json({ success: false, error: err.message });
+  }
+});
+
+// D. Execute Raw SQL Query
+app.post("/api/db/query", (req, res) => {
+  try {
+    const { sql } = req.body;
+    if (!sql) {
+      return res.status(400).json({ success: false, error: "SQL statement is required" });
+    }
+    const result = executeRawQuery(sql);
+    
+    // Broadcast if DDL or mutation
+    if (result.type !== "SELECT") {
+      broadcastSchemaSync({
+        type: "RAW_SQL_MUTATION",
+        sql: sql.slice(0, 100),
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// E. Real-Time Dynamic Schema Synchronization Endpoint
+app.post("/api/db/schema/sync", (req, res) => {
+  try {
+    const { tableName, columns, allowDropUnmatched = false, renameMap } = req.body;
+    if (!tableName || !Array.isArray(columns) || columns.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "tableName and non-empty columns array are required for dynamic schema synchronization.",
+      });
+    }
+
+    const syncReport = syncTableSchema(tableName, columns, { allowDropUnmatched, renameMap });
+
+    // Real-time broadcast to all connected app windows and tabs
+    broadcastSchemaSync({
+      type: "SCHEMA_DYNAMIC_SYNC",
+      tableName,
+      schemaVersion: syncReport.schemaVersion,
+      changes: syncReport.changes,
+      timestamp: new Date().toISOString(),
+    });
+
+    res.json(syncReport);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// F. Schema Version Endpoint
+app.get("/api/db/schema/version", (_req, res) => {
+  try {
+    const version = getSchemaVersion();
+    res.json({ success: true, ...version });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// G. Real-time Schema Synchronization Event Stream (Server-Sent Events)
+app.get("/api/db/schema/events", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders?.();
+
+  sseClients.add(res);
+
+  // Send initial handshake
+  const version = getSchemaVersion();
+  res.write(`event: handshake\ndata: ${JSON.stringify({ connected: true, version })}\n\n`);
+
+  req.on("close", () => {
+    sseClients.delete(res);
+  });
+});
+
+// H. Add Column to Table (ALTER TABLE)
+app.post("/api/db/structure/add-column", (req, res) => {
+  try {
+    const { tableName, columnName, columnType, notNull, defaultValue } = req.body;
+    if (!tableName || !columnName) {
+      return res.status(400).json({ success: false, error: "tableName and columnName are required" });
+    }
+    const result = addColumnToTable(tableName, {
+      name: columnName,
+      type: columnType || "TEXT",
+      notNull: Boolean(notNull),
+      defaultValue,
+    });
+
+    broadcastSchemaSync({
+      type: "COLUMN_ADDED",
+      tableName,
+      columnName,
+      timestamp: new Date().toISOString(),
+    });
+
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// I. Drop Column from Table (ALTER TABLE DROP COLUMN)
+app.post("/api/db/structure/drop-column", (req, res) => {
+  try {
+    const { tableName, columnName } = req.body;
+    if (!tableName || !columnName) {
+      return res.status(400).json({ success: false, error: "tableName and columnName are required" });
+    }
+    const result = dropColumnFromTable(tableName, columnName);
+
+    broadcastSchemaSync({
+      type: "COLUMN_DROPPED",
+      tableName,
+      columnName,
+      timestamp: new Date().toISOString(),
+    });
+
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// J. Rename Column in Table
+app.post("/api/db/structure/rename-column", (req, res) => {
+  try {
+    const { tableName, oldName, newName } = req.body;
+    if (!tableName || !oldName || !newName) {
+      return res.status(400).json({ success: false, error: "tableName, oldName and newName are required" });
+    }
+    const result = renameColumnInTable(tableName, oldName, newName);
+
+    broadcastSchemaSync({
+      type: "COLUMN_RENAMED",
+      tableName,
+      oldName,
+      newName,
+      timestamp: new Date().toISOString(),
+    });
+
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// K. Create New Table
+app.post("/api/db/structure/create-table", (req, res) => {
+  try {
+    const { tableName, columns } = req.body;
+    if (!tableName || !Array.isArray(columns) || columns.length === 0) {
+      return res.status(400).json({ success: false, error: "tableName and non-empty columns array are required" });
+    }
+    const result = createNewTable(tableName, columns);
+
+    broadcastSchemaSync({
+      type: "TABLE_CREATED",
+      tableName,
+      timestamp: new Date().toISOString(),
+    });
+
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// L. Drop Table
+app.post("/api/db/structure/drop-table", (req, res) => {
+  try {
+    const { tableName } = req.body;
+    if (!tableName) {
+      return res.status(400).json({ success: false, error: "tableName is required" });
+    }
+    const result = dropTable(tableName);
+
+    broadcastSchemaSync({
+      type: "TABLE_DROPPED",
+      tableName,
+      timestamp: new Date().toISOString(),
+    });
+
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// J. Insert Row
+app.post("/api/db/rows/insert", (req, res) => {
+  try {
+    const { tableName, data } = req.body;
+    if (!tableName || !data) {
+      return res.status(400).json({ success: false, error: "tableName and data object are required" });
+    }
+    const result = insertRowIntoTable(tableName, data);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// K. Update Row
+app.post("/api/db/rows/update", (req, res) => {
+  try {
+    const { tableName, primaryKeyCol, primaryKeyValue, data } = req.body;
+    if (!tableName || !primaryKeyCol || primaryKeyValue === undefined || !data) {
+      return res.status(400).json({ success: false, error: "tableName, primaryKeyCol, primaryKeyValue, and data are required" });
+    }
+    const result = updateRowInTable(tableName, primaryKeyCol, primaryKeyValue, data);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// L. Delete Row
+app.post("/api/db/rows/delete", (req, res) => {
+  try {
+    const { tableName, primaryKeyCol, primaryKeyValue } = req.body;
+    if (!tableName || !primaryKeyCol || primaryKeyValue === undefined) {
+      return res.status(400).json({ success: false, error: "tableName, primaryKeyCol, and primaryKeyValue are required" });
+    }
+    const result = deleteRowFromTable(tableName, primaryKeyCol, primaryKeyValue);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// M. Export Entire Database Dump
+app.get("/api/db/export", (_req, res) => {
+  try {
+    const dump = exportEntireDatabase();
+    res.setHeader("Content-Disposition", 'attachment; filename="fitpath_sqlite_export.json"');
+    res.setHeader("Content-Type", "application/json");
+    res.send(JSON.stringify(dump, null, 2));
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Route for Database Manager direct URL alias
+app.get("/db-admin", (_req, res) => {
+  res.redirect("/database-manager.html");
 });
 
 // Start Server with Vite middleware
@@ -1382,7 +1566,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`FitPath Server running on http://localhost:${PORT}`);
+    console.log(`FitPath SQLite Server running on http://localhost:${PORT}`);
   });
 }
 
